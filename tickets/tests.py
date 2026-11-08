@@ -177,3 +177,54 @@ class TicketRenderingTests(TestCase):
             self.assertEqual(fh.read(4), b"%PDF")
         order = ensure_order_pdf(order.pk)
         self.assertTrue(order.tickets_pdf)
+
+
+class TicketDesignTests(TestCase):
+    def setUp(self):
+        self.event = make_event()
+        self.ticket_type = make_ticket_type(self.event)
+
+    def _ticket(self):
+        order = create_order(
+            event=self.event, ticket_type=self.ticket_type, quantity=1, country="BJ",
+            buyer_name="Design Test", buyer_email="d@example.com",
+        )
+        order, _created = fulfil_order(order.pk)
+        return order.tickets.get()
+
+    def test_default_ticket_is_landscape_with_stub(self):
+        from PIL import Image
+
+        from .render import H, W, ensure_ticket_files
+
+        ticket = ensure_ticket_files(self._ticket().pk)
+        with ticket.ticket_png.open("rb") as fh:
+            self.assertEqual(Image.open(fh).size, (W, H))
+        self.assertEqual((W, H), (2400, 900))
+
+    def test_uploaded_design_is_used_as_background(self):
+        import io
+
+        from django.core.files.base import ContentFile
+        from PIL import Image
+
+        from .render import render_ticket_image, ticket_data
+
+        buffer = io.BytesIO()
+        Image.new("RGB", (1200, 450), (200, 0, 120)).save(buffer, format="PNG")
+        self.ticket_type.design_image.save("design.png", ContentFile(buffer.getvalue()), save=True)
+        image = render_ticket_image(ticket_data(self._ticket()))
+        self.assertEqual(image.getpixel((5, 5)), (200, 0, 120))   # artwork kept
+        # Default QR card: 504 px QR + 36 px padding + 80 px code, centred at (85 %, 50 %) → top padding around y=132.
+        self.assertEqual(image.getpixel((2040, 132)), (255, 255, 255))  # white QR card added on the artwork
+
+    @override_settings(TICKET_PDF_ENGINE="pillow")  # Pillow writes the page box uncompressed
+    def test_ticket_pdf_is_ticket_size(self):
+        from .render import ensure_ticket_files
+
+        ticket = ensure_ticket_files(self._ticket().pk)
+        with ticket.ticket_pdf.open("rb") as fh:
+            pdf = fh.read()
+        self.assertTrue(pdf.startswith(b"%PDF"))
+        # 200 × 75 mm = 566.9 × 212.6 pt
+        self.assertRegex(pdf, rb"/MediaBox \[\s*0 0 566\.\d+ 212\.\d+")

@@ -99,7 +99,7 @@
         <thead><tr><th>{% translate "Time" %}</th><th>{% translate "Result" %}</th><th>{% translate "Ticket" %}</th><th>{% translate "By" %}</th></tr></thead>
         <tbody data-recent-scans>
           {% for log in nwp.recent_scans %}
-            <tr><td>{{ log.created_at|time:"H:i:s" }}</td><td>{{ log.get_result_display }}</td><td>{% if log.ticket %}{{ log.ticket.code }} — {{ log.ticket.holder_name }}{% else %}{{ log.raw_value|truncatechars:20 }}{% endif %}</td><td>{{ log.scanned_by|default:"—" }}</td></tr>
+            <tr><td>{{ log.created_at|time:"H:i:s" }}</td><td>{{ log.get_result_display }}</td><td>{% if log.ticket %}{{ log.ticket.code }} — {{ log.ticket.holder_name }}{% elif log.staff_card %}{{ log.staff_card.code }} — {{ log.staff_card.full_name }}{% else %}{{ log.raw_value|truncatechars:20 }}{% endif %}</td><td>{{ log.scanned_by|default:"—" }}</td></tr>
           {% empty %}<tr><td colspan="4">{% translate "No scans yet." %}</td></tr>{% endfor %}
         </tbody>
       </table>

@@ -131,6 +131,7 @@ def order_detail(request, reference):
                     "category": ticket.ticket_type.tr("name"),
                     "png_url": ticket_download_url(ticket, "png"),
                     "pdf_url": ticket_download_url(ticket, "pdf"),
+                    "qr_url": ticket_download_url(ticket, "qr"),
                 }
             )
 
@@ -176,19 +177,20 @@ def _file_response(field, filename: str, inline: bool):
 
 @require_GET
 def download_ticket(request, token, kind):
-    """Signed link to one ticket file (PNG or PDF)."""
+    """Signed link to one ticket file: ticket PNG, ticket PDF, or the QR alone (to show at the entrance)."""
     ticket_uuid = read_ticket_token(token)
-    if not ticket_uuid or kind not in ("png", "pdf"):
+    if not ticket_uuid or kind not in ("png", "pdf", "qr"):
         raise Http404
     ticket = get_object_or_404(Ticket.objects.select_related("order__event"), uuid=ticket_uuid)
     if ticket.order.status != Order.Status.PAID or ticket.status == Ticket.Status.CANCELLED or links_expired(ticket.order.event):
         raise Http404
     ticket = ensure_ticket_files(ticket.pk)
-    inline = request.GET.get("inline") == "1"
+    inline = request.GET.get("inline") == "1" or kind == "qr"
     if not inline:
         Ticket.objects.filter(pk=ticket.pk).update(download_count=F("download_count") + 1)
-    field = ticket.ticket_png if kind == "png" else ticket.ticket_pdf
-    return _file_response(field, f"{ticket.code}.{kind}", inline)
+    field = {"png": ticket.ticket_png, "pdf": ticket.ticket_pdf, "qr": ticket.qr_image}[kind]
+    extension = "pdf" if kind == "pdf" else "png"
+    return _file_response(field, f"{ticket.code}{'-qr' if kind == 'qr' else ''}.{extension}", inline)
 
 
 @require_GET

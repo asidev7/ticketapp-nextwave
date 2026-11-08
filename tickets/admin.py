@@ -17,7 +17,7 @@ from unfold.widgets import (
     UnfoldAdminTextInputWidget,
 )
 
-from core.admin import thumb
+from core.admin import private_photo_widget, thumb
 from core.models import Event
 from core.storage import private_storage
 from core.tasks import dispatch
@@ -25,6 +25,7 @@ from core.utils import format_money, format_number, process_holder_photo
 
 from .models import ComplimentaryOrder, Order, OrderItem, Ticket, TicketBenefit, TicketType
 from .qr import make_qr_png
+from .render import render_preview_png
 from .services import StockError, cancel_order, fulfil_order, issue_complimentary, recount_stock
 from .tasks import regenerate_ticket_files, resend_order_email
 from .tokens import order_access_url, ticket_download_url
@@ -65,7 +66,7 @@ class TicketTypeAdmin(ModelAdmin):
     list_filter = ("event", "is_active")
     search_fields = ("name_en", "name_fr", "zone_label")
     prepopulated_fields = {"slug": ("name_en",)}
-    readonly_fields = ("sold", "reserved", "available_display", "seat_preview")
+    readonly_fields = ("sold", "reserved", "available_display", "seat_preview", "ticket_preview")
     inlines = [TicketBenefitInline]
     ordering_field = "order"
     hide_ordering_field = True
@@ -76,6 +77,11 @@ class TicketTypeAdmin(ModelAdmin):
         (_("Stock"), {"fields": ("capacity", "sold", "reserved", "available_display", "sale_start", "sale_end")}),
         (_("Description"), {"fields": ("description_en", "description_fr")}),
         (_("Spot in the hall"), {"fields": ("zone_label", "seat_image", "seat_preview")}),
+        (_("Ticket design"), {
+            "description": _("Upload your ticket artwork (2400 × 900 px). The system adds the QR code, the ticket code "
+                             "and the holder automatically. Save to refresh the preview."),
+            "fields": ("design_image", ("qr_x", "qr_y", "qr_size"), "holder_overlay", "ticket_preview"),
+        }),
     )
 
     @admin.display(description=_("Price XOF"), ordering="price_xof")
@@ -97,6 +103,17 @@ class TicketTypeAdmin(ModelAdmin):
     @admin.display(description=_("Preview"))
     def seat_preview(self, obj):
         return thumb(obj.seat_image, 220)
+
+    @admin.display(description=_("Ticket preview"))
+    def ticket_preview(self, obj):
+        if not obj or not obj.pk:
+            return _("Save first to see the preview.")
+        data = base64.b64encode(render_preview_png(obj, width=1200)).decode("ascii")
+        return format_html(
+            '<img src="data:image/png;base64,{}" alt="" style="width:100%;max-width:720px;height:auto;'
+            'border:1px solid #E5E7EB;border-radius:8px">',
+            data,
+        )
 
     @action(description=_("Recount sold / reserved from orders"))
     def recount(self, request, queryset):
@@ -401,6 +418,11 @@ class TicketAdmin(ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == "holder_photo":
+            kwargs["widget"] = private_photo_widget()
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     @admin.display(description=_("Status"), ordering="status")
     def status_badge(self, obj):

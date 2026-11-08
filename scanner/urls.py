@@ -11,6 +11,7 @@ urlpatterns = [
     path("scan/manifest.webmanifest", views.manifest, name="manifest"),
     path("scan/sw.js", views.service_worker, name="sw"),
     path("scan/photo/<uuid:ticket_uuid>/", views.holder_photo, name="photo"),
+    path("scan/staff-photo/<uuid:card_uuid>/", views.staff_photo, name="staff_photo"),
     path("api/scan/", views.api_scan, name="api_scan"),
     path("api/scan/stats/", views.api_stats, name="api_stats"),
 ]

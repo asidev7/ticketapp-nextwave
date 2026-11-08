@@ -1,8 +1,18 @@
-"""Ticket rendering: PNG 1080×1920 (Pillow) and PDF (WeasyPrint, Pillow fallback)."""
+"""Ticket rendering — landscape concert ticket with a stub (2400 × 900 px, 8:3).
+
+* With an uploaded design (TicketType.design_image) the artwork is the
+  background; the system adds the QR code and ticket code (and, if wanted,
+  the holder's photo and name) at the positions set in the admin.
+* Without a design, the system draws a clean default ticket.
+
+PNG for phones and e-mail, PDF at the real ticket size (200 × 75 mm).
+"""
 import base64
 import io
 import logging
 import os
+import uuid
+from dataclasses import dataclass
 from functools import lru_cache
 
 from django.conf import settings
@@ -17,16 +27,21 @@ from core.models import SiteSettings
 from core.utils import hex_to_rgb, text_color_on
 
 from .models import Order, Ticket
-from .qr import make_qr_image, make_qr_png
+from .qr import build_qr_payload, make_qr_image, make_qr_png
 
 logger = logging.getLogger("tickets")
 
-W, H = 1080, 1920
+W, H = 2400, 900          # 8:3 landscape
+STUB_X = 1700             # perforation; the stub (right part) holds the QR code
+PAGE_MM = (200, 75)       # printed ticket size
+
 WHITE = (255, 255, 255)
 DARK = (17, 24, 39)
 MUTED = (75, 85, 99)
 BORDER = (229, 231, 235)
 GREEN = (22, 163, 74)
+PAGE_BG = (244, 246, 250)
+PERFORATION = (156, 163, 175)
 
 REGULAR_FONTS = [
     "/usr/share/fonts/truetype/msttcorefonts/Arial.ttf",
@@ -98,6 +113,14 @@ def _wrap(draw, text: str, fnt, max_width: int, max_lines: int) -> list[str]:
     return lines
 
 
+def _fit_font(draw, text: str, max_width: int, size: int, minimum: int, bold: bool = True):
+    fnt = font(size, bold)
+    while _text_width(draw, text, fnt) > max_width and size > minimum:
+        size -= 2
+        fnt = font(size, bold)
+    return fnt
+
+
 def _circle(image: Image.Image, size: int) -> Image.Image:
     image = ImageOps.fit(image.convert("RGB"), (size, size), Image.Resampling.LANCZOS)
     mask = Image.new("L", (size * 4, size * 4), 0)
@@ -106,23 +129,6 @@ def _circle(image: Image.Image, size: int) -> Image.Image:
     result = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     result.paste(image, (0, 0), mask)
     return result
-
-
-def holder_avatar(ticket: Ticket, size: int, color_hex: str) -> Image.Image:
-    """Round holder photo, or initials on the category colour."""
-    if ticket.holder_photo:
-        try:
-            with ticket.holder_photo.open("rb") as fh:
-                return _circle(Image.open(fh).copy(), size)
-        except (OSError, ValueError):
-            logger.warning("Holder photo missing for ticket %s", ticket.code)
-    base = Image.new("RGB", (size, size), hex_to_rgb(color_hex))
-    draw = ImageDraw.Draw(base)
-    fnt = font(int(size * 0.38), True)
-    initials = ticket.initials
-    w = _text_width(draw, initials, fnt)
-    draw.text(((size - w) / 2, size * 0.29), initials, font=fnt, fill=hex_to_rgb(text_color_on(color_hex)))
-    return _circle(base, size)
 
 
 def _draw_check(draw, x: int, y: int, size: int, color) -> None:
@@ -140,6 +146,7 @@ def _en_date(value, fmt: str) -> str:
 
 
 def ticket_context(ticket: Ticket) -> dict:
+    """Shared values for e-mails and the ticket image."""
     order = ticket.order
     event = order.event
     tt = ticket.ticket_type
@@ -159,172 +166,288 @@ def ticket_context(ticket: Ticket) -> dict:
 
 
 # --------------------------------------------------------------------------
-# PNG
+# What goes on a ticket
 # --------------------------------------------------------------------------
-def render_ticket_png(ticket: Ticket) -> bytes:
-    """Portrait 1080×1920 ticket optimised for phone screens."""
-    ctx = ticket_context(ticket)
+@dataclass
+class TicketData:
+    holder_name: str
+    initials: str
+    code: str
+    qr_token: str
+    reference: str
+    ticket_type: object
+    event: object
+    photo: Image.Image | None = None
+
+
+def ticket_data(ticket: Ticket) -> TicketData:
+    photo = None
+    if ticket.holder_photo:
+        try:
+            with ticket.holder_photo.open("rb") as fh:
+                photo = Image.open(fh).copy()
+        except (OSError, ValueError):
+            logger.warning("Holder photo missing for ticket %s", ticket.code)
+    return TicketData(
+        holder_name=ticket.holder_name,
+        initials=ticket.initials,
+        code=ticket.code,
+        qr_token=ticket.qr_token,
+        reference=ticket.order.reference,
+        ticket_type=ticket.ticket_type,
+        event=ticket.order.event,
+        photo=photo,
+    )
+
+
+def sample_data(ticket_type) -> TicketData:
+    """Fake holder for the admin preview (its QR is valid but matches no ticket)."""
+    return TicketData(
+        holder_name="Ade Johnson",
+        initials="AJ",
+        code="NWP-AB12-CD34",
+        qr_token=build_qr_payload(uuid.UUID(int=0)),
+        reference="NWP-2026-SAMPLE",
+        ticket_type=ticket_type,
+        event=ticket_type.event,
+    )
+
+
+def avatar(data: TicketData, size: int, color_hex: str) -> Image.Image:
+    """Round holder photo, or initials on the category colour."""
+    if data.photo is not None:
+        return _circle(data.photo, size)
+    base = Image.new("RGB", (size, size), hex_to_rgb(color_hex))
+    draw = ImageDraw.Draw(base)
+    fnt = font(int(size * 0.38), True)
+    width = _text_width(draw, data.initials, fnt)
+    draw.text(((size - width) / 2, size * 0.29), data.initials, font=fnt, fill=hex_to_rgb(text_color_on(color_hex)))
+    return _circle(base, size)
+
+
+def _qr(token: str, size: int) -> Image.Image:
+    return make_qr_image(token, box_size=20, border=2).resize((size, size), Image.Resampling.NEAREST)
+
+
+def _center_text(draw, text: str, fnt, cx: float, y: float, fill) -> None:
+    draw.text((cx - _text_width(draw, text, fnt) / 2, y), text, font=fnt, fill=fill)
+
+
+# --------------------------------------------------------------------------
+# Default design (no artwork uploaded)
+# --------------------------------------------------------------------------
+def _perforate(img: Image.Image) -> None:
+    draw = ImageDraw.Draw(img)
+    for y in range(44, H - 44, 32):
+        draw.line([(STUB_X, y), (STUB_X, y + 18)], fill=PERFORATION, width=4)
+    for cy in (0, H):  # notches, like a real ticket
+        draw.ellipse([STUB_X - 36, cy - 36, STUB_X + 36, cy + 36], fill=PAGE_BG)
+
+
+def _draw_stub(img: Image.Image, data: TicketData) -> None:
+    draw = ImageDraw.Draw(img)
+    cx = STUB_X + (W - STUB_X) / 2
+    _center_text(draw, _("ADMIT ONE"), font(30, True), cx, 44, MUTED)
+    size = 500
+    x0, y0 = int(cx - size / 2), 104
+    draw.rounded_rectangle([x0 - 20, y0 - 20, x0 + size + 20, y0 + size + 20], radius=24, fill=WHITE, outline=BORDER, width=3)
+    img.paste(_qr(data.qr_token, size), (x0, y0))
+    _center_text(draw, data.code, font(50, True), cx, y0 + size + 42, DARK)
+    _center_text(draw, _("Non transferable — 1 entry only"), font(24, True), cx, y0 + size + 112, DARK)
+    _center_text(draw, f"{_('Order')} {data.reference}", font(24), cx, y0 + size + 152, MUTED)
+
+
+def _render_default(data: TicketData) -> Image.Image:
+    tt, event = data.ticket_type, data.event
     site = SiteSettings.load()
-    event = ctx["event"]
-    color = ctx["color"]
-    band = hex_to_rgb(color)
-    band_text = hex_to_rgb(text_color_on(color))
+    color = tt.color or "#0A3D91"
+    band, on_band = hex_to_rgb(color), hex_to_rgb(text_color_on(color))
+    category = tt.tr("name")
 
     img = Image.new("RGB", (W, H), WHITE)
     draw = ImageDraw.Draw(img)
 
     # Header band ------------------------------------------------------------
-    draw.rectangle([0, 0, W, 262], fill=band)
-    title_max = W - 120
+    draw.rectangle([0, 0, STUB_X, 240], fill=band)
+    x = 60
     if site.logo:
         try:
             with site.logo.open("rb") as fh:
                 logo = Image.open(fh).convert("RGBA")
-                logo.thumbnail((150, 150))
-                img.paste(logo, (W - 60 - logo.width, 50), logo)
-                title_max = W - 120 - logo.width - 30
+                logo.thumbnail((130, 130))
+                img.paste(logo, (60, (240 - logo.height) // 2), logo)
+                x = 60 + logo.width + 32
         except (OSError, ValueError):
             pass
-    title_font = font(72, True)
+    pill_font = font(40, True)
+    pill_text = category.upper()
+    pill_w = _text_width(draw, pill_text, pill_font) + 64
+    draw.rounded_rectangle([STUB_X - 60 - pill_w, 84, STUB_X - 60, 156], radius=36, fill=WHITE)
+    draw.text((STUB_X - 60 - pill_w + 32, 96), pill_text, font=pill_font, fill=DARK)
     title = event.name.upper()
-    while _text_width(draw, title, title_font) > title_max and title_font.size > 40:
-        title_font = font(title_font.size - 4, True)
-    draw.text((60, 48), title, font=title_font, fill=band_text)
-    draw.text((60, 134), event.edition, font=font(40), fill=band_text)
-
-    pill_font = font(34, True)
-    pill_text = ctx["category"].upper()
-    pill_w = _text_width(draw, pill_text, pill_font) + 56
-    draw.rounded_rectangle([60, 192, 60 + pill_w, 244], radius=26, fill=WHITE)
-    draw.text((88, 200), pill_text, font=pill_font, fill=DARK)
+    title_font = _fit_font(draw, title, STUB_X - x - pill_w - 120, 80, 44)
+    draw.text((x, 54), title, font=title_font, fill=on_band)
+    draw.text((x, 150), event.edition, font=font(38), fill=on_band)
 
     # Holder -------------------------------------------------------------------
-    avatar = holder_avatar(ticket, 220, color)
-    img.paste(avatar, (60, 296), avatar)
+    av = avatar(data, 210, color)
+    img.paste(av, (60, 284), av)
     tx = 310
-    draw.text((tx, 306), _("TICKET HOLDER"), font=font(28, True), fill=MUTED)
-    y = 346
-    for line in _wrap(draw, ticket.holder_name, font(52, True), W - tx - 60, 2):
-        draw.text((tx, y), line, font=font(52, True), fill=DARK)
-        y += 62
-    detail = ctx["category"] + (f" · {ctx['zone']}" if ctx["zone"] else "")
-    for line in _wrap(draw, detail, font(32), W - tx - 60, 2):
-        draw.text((tx, y + 6), line, font=font(32), fill=DARK)
-        y += 40
+    draw.text((tx, 296), _("TICKET HOLDER"), font=font(26, True), fill=MUTED)
+    name = _wrap(draw, data.holder_name, font(56, True), STUB_X - tx - 60, 1)
+    draw.text((tx, 334), name[0] if name else "", font=font(56, True), fill=DARK)
+    detail = category + (f" · {tt.zone_label}" if tt.zone_label else "")
+    detail_lines = _wrap(draw, detail, font(34), STUB_X - tx - 60, 1)
+    draw.text((tx, 412), detail_lines[0] if detail_lines else "", font=font(34), fill=DARK)
 
-    draw.line([(60, 548), (W - 60, 548)], fill=BORDER, width=3)
+    draw.line([(60, 536), (STUB_X - 60, 536)], fill=BORDER, width=3)
 
-    # Event info ---------------------------------------------------------------
-    label_font, value_font = font(26, True), font(38, True)
-    draw.text((60, 574), _("DATE"), font=label_font, fill=MUTED)
-    draw.text((60, 608), ctx["date"], font=value_font, fill=DARK)
-    draw.text((60, 676), _("DOORS · SHOW"), font=label_font, fill=MUTED)
-    times = " · ".join(t for t in (ctx["doors"], ctx["show"]) if t)
-    draw.text((60, 710), times, font=value_font, fill=DARK)
+    # Event info: date · doors/show · venue -------------------------------------
+    label, value = font(24, True), font(36, True)
+    draw.text((60, 562), _("DATE"), font=label, fill=MUTED)
+    draw.text((60, 596), _en_date(event.date_start, "D, M j, Y"), font=value, fill=DARK)
+    draw.text((580, 562), _("DOORS · SHOW"), font=label, fill=MUTED)
+    times = " · ".join(t for t in (_en_date(event.doors_open, "g:i A"), _en_date(event.date_start, "g:i A")) if t)
+    draw.text((580, 596), times, font=value, fill=DARK)
+    vx, vw = 1040, STUB_X - 1040 - 60
+    draw.text((vx, 562), _("VENUE"), font=label, fill=MUTED)
+    venue = _wrap(draw, event.venue_name, font(34, True), vw, 1)
+    draw.text((vx, 596), venue[0] if venue else "", font=font(34, True), fill=DARK)
+    vy = 640
+    for line in _wrap(draw, f"{event.venue_address}, {event.city}", font(26), vw, 2):
+        draw.text((vx, vy), line, font=font(26), fill=MUTED)
+        vy += 32
 
-    vx, vw = 580, W - 580 - 60
-    draw.text((vx, 574), _("VENUE"), font=label_font, fill=MUTED)
-    vy = 608
-    for line in _wrap(draw, event.venue_name, font(34, True), vw, 2):
-        draw.text((vx, vy), line, font=font(34, True), fill=DARK)
-        vy += 42
-    for line in _wrap(draw, f"{event.venue_address}, {event.city}", font(26), vw, 3):
-        draw.text((vx, vy + 4), line, font=font(26), fill=MUTED)
-        vy += 34
+    # Benefits on one line -------------------------------------------------------
+    bx, by = 60, 760
+    benefit_font = font(28)
+    for benefit in [b.tr("text") for b in tt.benefits.all()][:4]:
+        width = 40 + _text_width(draw, benefit, benefit_font)
+        if bx + width > STUB_X - 60:
+            break
+        _draw_check(draw, bx, by + 4, 26, GREEN)
+        draw.text((bx + 40, by), benefit, font=benefit_font, fill=DARK)
+        bx += width + 44
 
-    # Benefits -----------------------------------------------------------------
-    benefits = ctx["benefits"][:4]
-    if benefits:
-        draw.text((60, 800), _("INCLUDED"), font=label_font, fill=MUTED)
-        by = 840
-        for text in benefits:
-            _draw_check(draw, 62, by + 4, 26, GREEN)
-            line = _wrap(draw, text, font(30), W - 170, 1)
-            draw.text((108, by), line[0] if line else "", font=font(30), fill=DARK)
-            by += 44
+    draw.rectangle([0, H - 26, W, H], fill=band)
+    _draw_stub(img, data)
+    _perforate(img)
+    return img
 
-    # QR zone: black on white for a guaranteed read ----------------------------
-    qr_size = 640
-    qx, qy = (W - qr_size) // 2, 1052
-    draw.rounded_rectangle([qx - 24, qy - 24, qx + qr_size + 24, qy + qr_size + 24], radius=24, fill=WHITE, outline=BORDER, width=3)
-    qr = make_qr_image(ticket.qr_token, box_size=20, border=2).resize((qr_size, qr_size), Image.Resampling.NEAREST)
-    img.paste(qr, (qx, qy))
 
-    code_font = font(64, True)
-    cw = _text_width(draw, ticket.code, code_font)
-    draw.text(((W - cw) / 2, qy + qr_size + 44), ticket.code, font=code_font, fill=DARK)
+# --------------------------------------------------------------------------
+# Uploaded artwork + QR / holder added by the system
+# --------------------------------------------------------------------------
+def _render_on_artwork(data: TicketData) -> Image.Image:
+    tt = data.ticket_type
+    with tt.design_image.open("rb") as fh:
+        art = ImageOps.exif_transpose(Image.open(fh)).convert("RGB")
+    img = ImageOps.fit(art, (W, H), Image.Resampling.LANCZOS)
+    draw = ImageDraw.Draw(img)
 
-    footer_font = font(28)
-    ref = f"{_('Order')} {ctx['order'].reference}"
-    fw = _text_width(draw, ref, footer_font)
-    draw.text(((W - fw) / 2, 1830), ref, font=footer_font, fill=MUTED)
-    notice = _("Non transferable — 1 entry only")
-    nw = _text_width(draw, notice, font(28, True))
-    draw.text(((W - nw) / 2, 1868), notice, font=font(28, True), fill=DARK)
+    # QR card: white box so it always scans, whatever the artwork behind it.
+    qr_size = int(H * tt.qr_size / 100)
+    pad = max(18, qr_size // 14)
+    code_h = int(qr_size * 0.16)
+    box_w, box_h = qr_size + 2 * pad, qr_size + 2 * pad + code_h
+    x0 = int(min(max(W * tt.qr_x / 100 - box_w / 2, 12), W - box_w - 12))
+    y0 = int(min(max(H * tt.qr_y / 100 - box_h / 2, 12), H - box_h - 12))
+    draw.rounded_rectangle([x0, y0, x0 + box_w, y0 + box_h], radius=pad, fill=WHITE)
+    img.paste(_qr(data.qr_token, qr_size), (x0 + pad, y0 + pad))
+    code_font = _fit_font(draw, data.code, qr_size, max(24, int(code_h * 0.62)), 18)
+    _center_text(draw, data.code, code_font, x0 + box_w / 2, y0 + pad + qr_size + (code_h - code_font.size) / 2 - 2, DARK)
 
+    # Holder: photo + name + category on a light panel.
+    if tt.holder_overlay != "hidden":
+        color = tt.color or "#0A3D91"
+        name_font, detail_font = font(46, True), font(30)
+        detail = tt.tr("name") + (f" · {tt.zone_label}" if tt.zone_label else "")
+        text_w = min(760, max(_text_width(draw, data.holder_name, name_font), _text_width(draw, detail, detail_font)))
+        panel_w, panel_h = 30 + 150 + 28 + text_w + 36, 190
+        px = 40
+        py = 40 if tt.holder_overlay == "top_left" else H - 40 - panel_h
+        panel = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(panel).rounded_rectangle([px, py, px + panel_w, py + panel_h], radius=28, fill=(255, 255, 255, 236))
+        img = Image.alpha_composite(img.convert("RGBA"), panel).convert("RGB")
+        draw = ImageDraw.Draw(img)
+        av = avatar(data, 150, color)
+        img.paste(av, (px + 30, py + 20), av)
+        tx = px + 30 + 150 + 28
+        name = _wrap(draw, data.holder_name, name_font, text_w, 1)
+        draw.text((tx, py + 42), name[0] if name else "", font=name_font, fill=DARK)
+        detail_lines = _wrap(draw, detail, detail_font, text_w, 1)
+        draw.text((tx, py + 106), detail_lines[0] if detail_lines else "", font=detail_font, fill=MUTED)
+    return img
+
+
+# --------------------------------------------------------------------------
+# Public API
+# --------------------------------------------------------------------------
+def render_ticket_image(data: TicketData) -> Image.Image:
+    if data.ticket_type.design_image:
+        try:
+            return _render_on_artwork(data)
+        except (OSError, ValueError):
+            logger.exception("Ticket design unreadable for %s — using the default design", data.ticket_type)
+    return _render_default(data)
+
+
+def _png_bytes(image: Image.Image) -> bytes:
     buffer = io.BytesIO()
-    img.save(buffer, format="PNG", optimize=True)
+    image.save(buffer, format="PNG", optimize=True)
     return buffer.getvalue()
 
 
+def render_ticket_png(ticket: Ticket) -> bytes:
+    return _png_bytes(render_ticket_image(ticket_data(ticket)))
+
+
+def render_preview_png(ticket_type, width: int = 1200) -> bytes:
+    """Sample ticket for the admin (fake holder)."""
+    image = render_ticket_image(sample_data(ticket_type))
+    image = image.resize((width, int(width * H / W)), Image.Resampling.LANCZOS)
+    return _png_bytes(image)
+
+
 # --------------------------------------------------------------------------
-# PDF
+# PDF: one page per ticket, at the real ticket size (200 × 75 mm)
 # --------------------------------------------------------------------------
-def _png_data_uri(image: Image.Image) -> str:
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
-    return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+def _ticket_image(ticket: Ticket) -> Image.Image:
+    if ticket.ticket_png:
+        with ticket.ticket_png.open("rb") as fh:
+            return Image.open(fh).convert("RGB")
+    return render_ticket_image(ticket_data(ticket))
 
 
-def _bytes_data_uri(data: bytes, mime: str = "image/png") -> str:
-    return f"data:{mime};base64," + base64.b64encode(data).decode("ascii")
-
-
-def _weasyprint_pdf(tickets: list[Ticket]) -> bytes:
+def _weasyprint_pdf(images: list[Image.Image], size_mm: tuple[float, float]) -> bytes:
     from weasyprint import HTML
 
-    site = SiteSettings.load()
-    logo_uri = ""
-    if site.logo:
-        try:
-            with site.logo.open("rb") as fh:
-                logo_uri = _bytes_data_uri(fh.read(), "image/png")
-        except OSError:
-            logo_uri = ""
-    pages = []
-    for ticket in tickets:
-        ctx = ticket_context(ticket)
-        ctx["avatar_uri"] = _png_data_uri(holder_avatar(ticket, 300, ctx["color"]))
-        ctx["qr_uri"] = _bytes_data_uri(make_qr_png(ticket.qr_token, size=800))
-        ctx["band_text"] = text_color_on(ctx["color"])
-        pages.append(ctx)
-    html = render_to_string("tickets/ticket_pdf.html", {"pages": pages, "logo_uri": logo_uri, "site": site})
+    pages = ["data:image/png;base64," + base64.b64encode(_png_bytes(image)).decode("ascii") for image in images]
+    html = render_to_string("tickets/ticket_pdf.html", {"pages": pages, "width_mm": size_mm[0], "height_mm": size_mm[1]})
     return HTML(string=html, base_url=str(settings.BASE_DIR)).write_pdf()
 
 
-def _pillow_pdf(tickets: list[Ticket]) -> bytes:
-    images = []
-    for ticket in tickets:
-        if ticket.ticket_png:
-            with ticket.ticket_png.open("rb") as fh:
-                images.append(Image.open(fh).convert("RGB"))
-        else:
-            images.append(Image.open(io.BytesIO(render_ticket_png(ticket))).convert("RGB"))
+def _pillow_pdf(images: list[Image.Image], size_mm: tuple[float, float]) -> bytes:
     buffer = io.BytesIO()
-    images[0].save(buffer, format="PDF", save_all=True, append_images=images[1:], resolution=200)
+    dpi = images[0].width / (size_mm[0] / 25.4)
+    images[0].save(buffer, format="PDF", save_all=True, append_images=images[1:], resolution=dpi)
     return buffer.getvalue()
 
 
-def render_tickets_pdf(tickets: list[Ticket]) -> bytes:
-    """One page per ticket (A6 portrait)."""
-    if not tickets:
-        raise ValueError("No tickets to render")
+def images_to_pdf(images: list[Image.Image], size_mm: tuple[float, float]) -> bytes:
+    """One image per page, each page exactly `size_mm` (tickets, staff cards)."""
     if settings.TICKET_PDF_ENGINE == "weasyprint":
         try:
-            return _weasyprint_pdf(tickets)
-        except Exception:  # missing system libs, font issue…
+            return _weasyprint_pdf(images, size_mm)  # lossless PNG inside the PDF
+        except Exception:  # missing system libs…
             logger.exception("WeasyPrint failed — falling back to Pillow PDF")
-    return _pillow_pdf(tickets)
+    return _pillow_pdf(images, size_mm)
+
+
+def render_tickets_pdf(tickets: list[Ticket]) -> bytes:
+    if not tickets:
+        raise ValueError("No tickets to render")
+    return images_to_pdf([_ticket_image(ticket) for ticket in tickets], PAGE_MM)
 
 
 # --------------------------------------------------------------------------

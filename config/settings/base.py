@@ -300,6 +300,7 @@ UNFOLD = {
                     {"title": _("Tickets"), "icon": "confirmation_number", "link": reverse_lazy("admin:tickets_ticket_changelist")},
                     {"title": _("Complimentary tickets"), "icon": "redeem", "link": reverse_lazy("admin:tickets_complimentaryorder_changelist")},
                     {"title": _("Scan logs"), "icon": "qr_code_scanner", "link": reverse_lazy("admin:scanner_scanlog_changelist")},
+                    {"title": _("Staff cards"), "icon": "badge", "link": reverse_lazy("admin:scanner_staffcard_changelist")},
                 ],
             },
             {

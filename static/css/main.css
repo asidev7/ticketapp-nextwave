@@ -370,9 +370,13 @@ address { font-style: normal; margin-bottom: 16px; }
 .result__ref { color: var(--text-2); }
 .order-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0 0 24px; }
 .ticket-previews { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 16px; }
-@media (min-width: 640px) { .ticket-previews { grid-template-columns: repeat(2, 1fr); } }
 .ticket-preview { text-align: center; padding: 12px; }
-.ticket-preview img { width: 100%; max-width: 360px; height: auto; margin: 0 auto 8px; border-radius: var(--radius); border: 1px solid var(--border); }
+.ticket-preview img { width: 100%; height: auto; margin: 0 auto 8px; border-radius: var(--radius); border: 1px solid var(--border); }
+.entrance-qr { margin: 8px 0 12px; }
+.entrance-qr summary { display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border-radius: 999px; background: var(--primary); color: var(--on-primary); font-weight: bold; cursor: pointer; list-style: none; }
+.entrance-qr summary::-webkit-details-marker { display: none; }
+.entrance-qr img { width: min(360px, 90%); margin: 16px auto 4px; border: 0; border-radius: 0; background: #FFFFFF; }
+.entrance-qr__code { font-size: 22px; font-weight: bold; letter-spacing: 1px; margin: 0; }
 .ticket-preview__code { font-size: 20px; font-weight: bold; margin: 0; letter-spacing: 1px; }
 .ticket-preview__links { font-weight: bold; }
 .order-help { text-align: center; color: var(--text-2); margin-bottom: 40px; }

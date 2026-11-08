@@ -95,7 +95,7 @@ def dashboard_callback(request, context):
                 "gateways_ready": sum(1 for g in PaymentGateway.objects.filter(is_active=True) if g.is_configured),
                 "checked_in": format_number(counts["checked_in"]),
                 "checkin_total": format_number(counts["total"]),
-                "recent_scans": ScanLog.objects.select_related("ticket", "scanned_by")[:8],
+                "recent_scans": ScanLog.objects.select_related("ticket", "staff_card", "scanned_by")[:8],
             }
         }
     )

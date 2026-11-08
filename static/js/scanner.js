@@ -56,7 +56,7 @@
   }
 
   function feedback(result) {
-    if (result === "accepted") {
+    if (result === "accepted" || result === "staff") {
       beep(1046, 0.18);
       if (navigator.vibrate) navigator.vibrate(120);
     } else if (result === "already_used") {
@@ -98,7 +98,8 @@
     var ticket = data.ticket || {};
     var result = data.result;
     resultBox.className = "result r-" + result;
-    resultBox.querySelector("[data-result-status]").textContent = (result === "accepted" ? "✓ " : "✕ ") + label(result);
+    var ok = result === "accepted" || result === "staff";
+    resultBox.querySelector("[data-result-status]").textContent = (ok ? "✓ " : "✕ ") + label(result);
     var photo = resultBox.querySelector("[data-result-photo]");
     if (ticket.photo_url && result !== "invalid") {
       photo.src = ticket.photo_url;

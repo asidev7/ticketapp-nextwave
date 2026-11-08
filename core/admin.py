@@ -12,9 +12,29 @@ from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin, StackedInline
 from unfold.decorators import action
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+from unfold.widgets import UnfoldAdminImageSmallFieldWidget
 
 from .models import FAQ, Event, HeroSlide, PhysicalOutlet, SiteSettings
 from .qrcodes import buy_page_url, buy_qr_png, buy_qr_svg
+
+
+class PrivateImageWidget(UnfoldAdminImageSmallFieldWidget):
+    """Unfold upload field for photos kept in private storage.
+
+    Those files have no public URL, so the existing file is never shown or
+    linked (no broken preview, storage path not exposed). The layout Unfold's
+    JavaScript expects is kept.
+    """
+
+    def is_initial(self, value):
+        return False
+
+    def format_value(self, value):
+        return None
+
+
+def private_photo_widget():
+    return PrivateImageWidget(attrs={"accept": "image/jpeg,image/png,image/webp"})
 
 
 def thumb(image, size: int = 56, round_: bool = False):

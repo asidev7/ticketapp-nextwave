@@ -17,7 +17,7 @@ from django_ratelimit.decorators import ratelimit
 from core.models import Event
 from tickets.models import Ticket
 
-from .models import ScanLog
+from .models import ScanLog, StaffCard
 from .services import event_counts, scan_ticket
 
 
@@ -114,7 +114,7 @@ def api_scan(request):
 @scanner_api
 def api_stats(request):
     event = Event.get_active()
-    recent = ScanLog.objects.select_related("ticket", "scanned_by").order_by("-created_at")[:10]
+    recent = ScanLog.objects.select_related("ticket", "staff_card", "scanned_by").order_by("-created_at")[:10]
     return JsonResponse(
         {
             **event_counts(event),
@@ -122,8 +122,8 @@ def api_stats(request):
                 {
                     "result": log.result,
                     "label": log.get_result_display(),
-                    "code": log.ticket.code if log.ticket else log.raw_value[:20],
-                    "holder": log.ticket.holder_name if log.ticket else "",
+                    "code": log.ticket.code if log.ticket else (log.staff_card.code if log.staff_card else log.raw_value[:20]),
+                    "holder": log.ticket.holder_name if log.ticket else (log.staff_card.full_name if log.staff_card else ""),
                     "at": log.created_at.isoformat(),
                     "by": log.scanned_by.get_username() if log.scanned_by else "",
                 }
@@ -139,6 +139,16 @@ def holder_photo(request, ticket_uuid):
     if not ticket.holder_photo:
         raise Http404
     response = FileResponse(ticket.holder_photo.open("rb"), content_type="image/jpeg")
+    response["Cache-Control"] = "private, max-age=600"
+    return response
+
+
+@scanner_required
+def staff_photo(request, card_uuid):
+    card = get_object_or_404(StaffCard, uuid=card_uuid)
+    if not card.photo:
+        raise Http404
+    response = FileResponse(card.photo.open("rb"), content_type="image/jpeg")
     response["Cache-Control"] = "private, max-age=600"
     return response
 

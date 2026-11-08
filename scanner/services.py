@@ -1,13 +1,14 @@
 import logging
 
 from django.db import transaction
+from django.db.models import F
 from django.urls import reverse
 from django.utils import dateformat, timezone, translation
 
 from tickets.models import Order, Ticket
-from tickets.qr import normalize_code, parse_qr_payload
+from tickets.qr import STAFF_CODE_PREFIX, STAFF_PREFIX, normalize_code, parse_qr_payload, parse_staff_payload
 
-from .models import ScanLog
+from .models import ScanLog, StaffCard
 
 logger = logging.getLogger("scanner")
 
@@ -42,6 +43,8 @@ def scan_ticket(raw_value: str, user, event, device_info: str = "") -> dict:
     at the same moment on two phones is accepted only once.
     """
     value = (raw_value or "").strip()[:255]
+    if value.upper().startswith(f"{STAFF_PREFIX}:") or normalize_code(value, STAFF_CODE_PREFIX):
+        return scan_staff_card(value, user, event, device_info)
     lookup = {}
     if value.upper().startswith("NWP:"):
         ticket_uuid = parse_qr_payload(value)  # None if the signature is wrong
@@ -106,5 +109,45 @@ def scan_ticket(raw_value: str, user, event, device_info: str = "") -> dict:
             "color": tt.color,
             "order": ticket.order.reference,
             "photo_url": reverse("scanner:photo", args=[ticket.uuid]) if ticket.holder_photo else "",
+        }
+    return payload
+
+
+def scan_staff_card(value: str, user, event, device_info: str = "") -> dict:
+    """Staff badge: accepted at every passage while the card is active."""
+    lookup = {}
+    if value.upper().startswith(f"{STAFF_PREFIX}:"):
+        card_uuid = parse_staff_payload(value)
+        if card_uuid:
+            lookup = {"uuid": card_uuid}
+    else:
+        lookup = {"code": normalize_code(value, STAFF_CODE_PREFIX)}
+
+    with transaction.atomic():
+        card = StaffCard.objects.select_for_update().filter(**lookup).first() if lookup else None
+        if card is None:
+            result = ScanLog.Result.INVALID
+        elif not event or card.event_id != event.pk:
+            result = ScanLog.Result.WRONG_EVENT
+        elif not card.is_active:
+            result = ScanLog.Result.CANCELLED
+        else:
+            result = ScanLog.Result.STAFF
+            StaffCard.objects.filter(pk=card.pk).update(scan_count=F("scan_count") + 1, last_scan_at=timezone.now())
+        ScanLog.objects.create(
+            staff_card=card, raw_value=value, scanned_by=user, device_info=(device_info or "")[:255], result=result,
+        )
+
+    logger.info("Staff scan %s by %s: %s", value[:40], user, result)
+    payload = {"result": result, "ticket": None, "staff": True, "first_scan_at": "", "first_scanned_by": "", **event_counts(event)}
+    if card is not None and result != ScanLog.Result.INVALID:
+        payload["ticket"] = {
+            "code": card.code,
+            "holder_name": card.full_name,
+            "category": card.get_role_display(),
+            "zone": card.title,
+            "color": card.color,
+            "order": "",
+            "photo_url": reverse("scanner:staff_photo", args=[card.uuid]) if card.photo else "",
         }
     return payload

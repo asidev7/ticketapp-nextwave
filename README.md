@@ -138,6 +138,12 @@ Services systemd fournis dans `deploy/` : `nextwave-gunicorn.service`, `nextwave
 - **Réglages du site** : couleurs, contacts, ventes ouvertes/fermées, photo obligatoire, frais, textes légaux,
   et **QR code de la page d'achat** (PNG/SVG pour les affiches).
 - **Événement / Diaporama / Artistes / Types de tickets / Points de vente / FAQ** : tout le contenu EN/FR.
+- **Design des tickets** (par type) : importez votre visuel paysage 2400 × 900 px (billet 200 × 75 mm avec talon) ;
+  le système y ajoute le QR code, le code du ticket et le titulaire (position et taille réglables, aperçu en direct).
+  Sans visuel, un billet est dessiné automatiquement. Le PDF est au format billet, pas A4.
+- **Cartes staff** : nom, prénom, fonction (Staff, Sécurité, Organisation, Artiste, Presse, Bénévole, Technique),
+  photo, format carte de membre 85,6 × 54 mm (PNG/PDF, export groupé). Leur QR est accepté par le scanner
+  (« STAFF ✓ », passages illimités) tant que la carte est active.
 - **Commandes** : filtres, recherche, renvoi des tickets, *marquer payée*, annulation, export CSV/Excel.
 - **Invitations** : tickets gratuits (invités, presse, artistes) envoyés par e-mail.
 - **Tickets** : aperçu du QR, régénération, annulation, remise à zéro de l'entrée.

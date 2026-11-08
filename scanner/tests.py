@@ -97,3 +97,64 @@ class ConcurrentScanTests(TransactionTestCase):
         for t in threads:
             t.join()
         self.assertEqual(sorted(results), ["accepted", "already_used"])
+
+
+class StaffCardScanTests(TestCase):
+    def setUp(self):
+        from django.core.files.base import ContentFile
+
+        from .models import StaffCard
+
+        self.event = make_event()
+        self.user = User.objects.create_user("door", "door@example.com", "pw")
+        self.card = StaffCard(event=self.event, first_name="Tunde", last_name="Bello", role="security")
+        self.card.photo.save("p.jpg", ContentFile(_jpeg()), save=False)
+        self.card.save()
+
+    def test_staff_card_is_accepted_at_every_passage(self):
+        for expected_count in (1, 2):
+            result = scan_ticket(self.card.qr_token, self.user, self.event)
+            self.assertEqual(result["result"], ScanLog.Result.STAFF)
+            self.assertEqual(result["ticket"]["holder_name"], "Tunde Bello")
+            self.card.refresh_from_db()
+            self.assertEqual(self.card.scan_count, expected_count)
+
+    def test_manual_staff_code(self):
+        self.assertEqual(scan_ticket(self.card.code.lower(), self.user, self.event)["result"], ScanLog.Result.STAFF)
+
+    def test_deactivated_card_is_refused(self):
+        self.card.is_active = False
+        self.card.save()
+        self.assertEqual(scan_ticket(self.card.qr_token, self.user, self.event)["result"], ScanLog.Result.CANCELLED)
+
+    def test_forged_staff_qr_and_cross_use_are_refused(self):
+        from tickets.qr import build_qr_payload
+
+        forged = f"NWS:{self.card.uuid}:{'b' * 16}"
+        self.assertEqual(scan_ticket(forged, self.user, self.event)["result"], ScanLog.Result.INVALID)
+        # The ticket signature of the same UUID must not open a staff card (and vice versa).
+        as_ticket = build_qr_payload(self.card.uuid)
+        self.assertEqual(scan_ticket(as_ticket, self.user, self.event)["result"], ScanLog.Result.INVALID)
+        swapped = self.card.qr_token.replace("NWS:", "NWP:")
+        self.assertEqual(scan_ticket(swapped, self.user, self.event)["result"], ScanLog.Result.INVALID)
+
+    def test_card_files_are_member_card_size(self):
+        from PIL import Image
+
+        from .badges import ensure_card_files
+
+        card = ensure_card_files(self.card.pk, force=True)
+        with card.card_png.open("rb") as fh:
+            self.assertEqual(Image.open(fh).size, (1350, 852))
+        with card.card_pdf.open("rb") as fh:
+            self.assertEqual(fh.read(4), b"%PDF")
+
+
+def _jpeg():
+    import io
+
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (400, 400), (10, 61, 145)).save(buffer, format="JPEG")
+    return buffer.getvalue()
