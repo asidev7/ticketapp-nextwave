@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% load i18n static nwp %}
+
+{% block title %}{{ event.name }} — {{ event.edition }} · {{ event.date_start|endate:"M j, Y" }}{% endblock %}
+{% block description %}{{ event|tr:"description"|truncatechars:160 }}{% endblock %}
+{% block body_class %}page-home{% endblock %}
+
+{% block content %}
+{# ===================== HERO ===================== #}
+<section class="hero" id="top" {% if slides %}data-carousel aria-roledescription="carousel"{% endif %} aria-label="{{ event.name }}">
+  <div class="hero__slides">
+    {% for slide in slides %}
+      <div class="hero__slide{% if forloop.first %} is-active{% endif %}" role="group" aria-roledescription="slide"
+           aria-label="{{ forloop.counter }} / {{ slides|length }}"
+           data-title="{{ slide|tr:'title' }}" data-subtitle="{{ slide|tr:'subtitle' }}" {% if not forloop.first %}aria-hidden="true"{% endif %}>
+        <img src="{{ slide.image.url }}" alt="" width="1600" height="900" decoding="async"
+             {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+      </div>
+    {% empty %}
+      <div class="hero__slide is-active hero__slide--plain"></div>
+    {% endfor %}
+  </div>
+  <div class="hero__veil" aria-hidden="true"></div>
+
+  <div class="container hero__content">
+   <div class="hero__panel">
+    <p class="hero__edition">{% icon "sparkles" 16 %}{{ event.edition }}</p>
+    <h1 class="hero__title" data-split>{{ event.name }}</h1>
+    {% with first=slides.0 %}
+      <p class="hero__caption" data-hero-caption aria-live="polite">{% if first %}{{ first|tr:"title" }}{% if first|tr:"subtitle" %} — {{ first|tr:"subtitle" }}{% endif %}{% endif %}</p>
+    {% endwith %}
+    <p class="hero__meta">
+      <span>{% icon "calendar" %}{{ event.date_start|endate:"D, M j, Y · g:i A" }}</span>
+      <span>{% icon "map-pin" %}{{ event.venue_name }}, {{ event.city }}</span>
+    </p>
+    <a class="btn btn-accent btn-lg btn-shine" href="#tickets">{% icon "ticket" 22 %}{% translate "Buy Ticket" %}</a>
+
+    <div class="countdown" data-countdown="{{ event.date_start|isodate }}" aria-label="{% translate 'Countdown to the show' %}">
+      <div class="countdown__item"><span data-unit="days">--</span><small>{% translate "Days" %}</small></div>
+      <div class="countdown__item"><span data-unit="hours">--</span><small>{% translate "Hours" %}</small></div>
+      <div class="countdown__item"><span data-unit="minutes">--</span><small>{% translate "Minutes" %}</small></div>
+      <div class="countdown__item"><span data-unit="seconds">--</span><small>{% translate "Seconds" %}</small></div>
+    </div>
+    <p class="countdown__live" data-countdown-done hidden>{% translate "The party is on!" %}</p>
+   </div>
+  </div>
+
+  {% if slides|length > 1 %}
+    <button class="hero__arrow hero__arrow--prev" type="button" data-prev aria-label="{% translate 'Previous slide' %}">{% icon "chevron-left" 26 %}</button>
+    <button class="hero__arrow hero__arrow--next" type="button" data-next aria-label="{% translate 'Next slide' %}">{% icon "chevron-right" 26 %}</button>
+    <div class="hero__dots" role="tablist" aria-label="{% translate 'Choose a slide' %}">
+      {% for slide in slides %}
+        <button type="button" role="tab" data-dot="{{ forloop.counter0 }}" aria-label="{% blocktranslate with n=forloop.counter %}Slide {{ n }}{% endblocktranslate %}" {% if forloop.first %}aria-selected="true"{% endif %}></button>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+
+{# ===================== KEY INFO ===================== #}
+<section class="key-info" aria-label="{% translate 'Key information' %}">
+  <div class="container key-info__grid">
+    <div class="key-info__item">
+      <span class="key-info__icon">{% icon "calendar" 22 %}</span>
+      <div><p class="key-info__label">{% translate "Date" %}</p><p class="key-info__value">{{ event.date_start|endate:"D, M j, Y" }}</p></div>
+    </div>
+    <div class="key-info__item">
+      <span class="key-info__icon">{% icon "clock" 22 %}</span>
+      <div>
+        <p class="key-info__label">{% translate "Doors · Show" %}</p>
+        <p class="key-info__value">{% if event.doors_open %}{{ event.doors_open|endate:"g:i A" }} · {% endif %}{{ event.date_start|endate:"g:i A" }}</p>
+      </div>
+    </div>
+    <div class="key-info__item">
+      <span class="key-info__icon">{% icon "map-pin" 22 %}</span>
+      <div><p class="key-info__label">{% translate "Venue" %}</p><p class="key-info__value">{{ event.venue_name }}, {{ event.city }}</p></div>
+    </div>
+    <div class="key-info__item">
+      <span class="key-info__icon">{% icon "ticket" 22 %}</span>
+      <div>
+        <p class="key-info__label">{% translate "Tickets from" %}</p>
+        <p class="key-info__value">{% if min_prices.XOF %}{{ min_prices.XOF|money:"XOF" }}{% endif %}{% if min_prices.XOF and min_prices.NGN %} / {% endif %}{% if min_prices.NGN %}{{ min_prices.NGN|money:"NGN" }}{% endif %}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ===================== VIDEO & POSTER ===================== #}
+{% if event.video_file or event.video_embed_url or event.poster_image %}
+<section class="section" id="video" aria-labelledby="video-title">
+  <div class="container">
+    <h2 class="section-title" id="video-title">{% translate "Watch the teaser" %}</h2>
+    <div class="media-grid">
+      {% if event.video_file or event.video_embed_url %}
+        <div class="video-frame" data-video {% if event.video_embed_url %}data-embed="{{ event.video_embed_url }}"{% endif %}>
+          {% if event.video_file %}
+            <video src="{{ event.video_file.url }}" {% if event.video_poster %}poster="{{ event.video_poster.url }}"{% endif %} preload="none" muted playsinline controls></video>
+          {% endif %}
+          <button type="button" class="video-frame__play" data-play aria-label="{% translate 'Play the teaser video' %}">
+            {% if event.video_poster %}<img src="{{ event.video_poster.url }}" alt="" loading="lazy" width="1280" height="720">{% endif %}
+            <span class="video-frame__icon">{% icon "play" 34 %}</span>
+          </button>
+        </div>
+      {% endif %}
+      {% if event.poster_image %}
+        <figure class="poster">
+          <button type="button" class="poster__open" data-lightbox="{{ event.poster_image.url }}" data-caption="{% translate 'Official poster' %}">
+            <img src="{{ event.poster_image.url }}" alt="{% translate 'Official poster' %} — {{ event.name }}" loading="lazy" width="600" height="850">
+          </button>
+          <figcaption><a class="btn btn-outline" href="{{ event.poster_image.url }}" download>{% icon "download" %}{% translate "Download the poster" %}</a></figcaption>
+        </figure>
+      {% endif %}
+    </div>
+    {% if event|tr:"description" %}<div class="prose">{{ event|tr:"description"|linebreaks }}</div>{% endif %}
+  </div>
+</section>
+{% endif %}
+
+{# ===================== LINEUP ===================== #}
+{% if artists %}
+<section class="section section--alt" id="lineup" aria-labelledby="lineup-title">
+  <div class="container">
+    <h2 class="section-title" id="lineup-title">{% translate "Lineup" %}</h2>
+    <div class="tabs" role="tablist" aria-label="{% translate 'Filter by category' %}" data-lineup-tabs>
+      <button type="button" role="tab" class="tab" data-filter="all" aria-selected="true">{% translate "All" %}</button>
+      {% for category in categories %}
+        <button type="button" role="tab" class="tab" data-filter="{{ category.slug }}" aria-selected="false">{{ category|tr:"name" }}</button>
+      {% endfor %}
+    </div>
+    <ul class="artist-grid" data-lineup>
+      {% for artist in artists %}
+        <li class="artist-card{% if artist.is_headliner %} is-headliner{% endif %}" data-category="{{ artist.category.slug }}" style="--i: {{ forloop.counter0 }}">
+          <button type="button" class="artist-card__open" data-artist="{{ artist.pk }}" aria-haspopup="dialog">
+            <span class="artist-card__photo">
+              {% if artist.photo %}<img src="{{ artist.photo.url }}" alt="" loading="lazy" width="400" height="400">{% else %}<span class="artist-card__initial" aria-hidden="true">{{ artist.stage_name|slice:":1" }}</span>{% endif %}
+              <span class="artist-card__shade" aria-hidden="true"></span>
+              {% if artist.is_headliner %}<span class="badge badge-accent artist-card__badge">{% icon "star" 14 %}{% translate "Headliner" %}</span>{% endif %}
+              <span class="artist-card__view" aria-hidden="true">{% icon "plus" 16 %}{% translate "View artist" %}</span>
+              <span class="artist-card__body">
+                <span class="artist-card__name">{{ artist.stage_name }}</span>
+                <span class="artist-card__role">{% flag_svg artist.country_code %}{{ artist.role_label }}</span>
+              </span>
+            </span>
+          </button>
+          {% if artist.socials %}
+            <ul class="artist-card__socials">
+              {% for label, url in artist.socials %}
+                <li><a href="{{ url }}" target="_blank" rel="noopener" class="social-btn social-btn--{{ label|lower }}" aria-label="{{ label }} — {{ artist.stage_name }}">{% icon label|lower 18 %}</a></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+          <template id="artist-{{ artist.pk }}">
+            <div class="artist-modal">
+              <div class="artist-modal__photo">
+                {% if artist.photo %}<img src="{{ artist.photo.url }}" alt="{{ artist.stage_name }}" width="400" height="400">{% else %}<span class="artist-card__initial" aria-hidden="true">{{ artist.stage_name|slice:":1" }}</span>{% endif %}
+              </div>
+              <div class="artist-modal__body">
+                {% if artist.is_headliner %}<span class="badge badge-accent">{% icon "star" 14 %}{% translate "Headliner" %}</span>{% endif %}
+                <h3 class="artist-modal__name">{{ artist.stage_name }}</h3>
+                <p class="artist-modal__meta">{% flag_svg artist.country_code %}{{ artist.country_name }} · {{ artist.role_label }}</p>
+                {% if artist|tr:"bio" %}<div class="artist-modal__bio">{{ artist|tr:"bio"|linebreaks }}</div>{% endif %}
+                {% if artist.socials %}
+                  <p class="artist-modal__socials">
+                    {% for label, url in artist.socials %}<a href="{{ url }}" target="_blank" rel="noopener" class="social-pill social-pill--{{ label|lower }}">{% icon label|lower 18 %}{{ label }}</a>{% endfor %}
+                  </p>
+                {% endif %}
+              </div>
+            </div>
+          </template>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+{# ===================== TICKETS ===================== #}
+<section class="section" id="tickets" aria-labelledby="tickets-title" data-tickets data-currency="XOF">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title" id="tickets-title">{% translate "Tickets" %}</h2>
+      <div class="currency-toggle" role="group" aria-label="{% translate 'Show prices in' %}">
+        <button type="button" data-set-currency="XOF" data-country="BJ" aria-pressed="true">{% flag_svg "BJ" %}XOF</button>
+        <button type="button" data-set-currency="NGN" data-country="NG" aria-pressed="false">{% flag_svg "NG" %}NGN</button>
+      </div>
+    </div>
+    {% if not sales_open %}<p class="alert alert-info">{% translate "Online sales are paused for the moment. Check the physical outlets below." %}</p>{% endif %}
+
+    <div class="ticket-grid">
+      {% for tt in ticket_types %}
+        <article class="ticket-card{% if tt.is_sold_out %} is-soldout{% endif %}" style="--tt-color: {{ tt.color }}">
+          <header class="ticket-card__head">
+            <h3 class="ticket-card__name">{{ tt|tr:"name" }}</h3>
+            {% if tt.is_sold_out %}
+              <span class="badge badge-dark">{% translate "Sold out" %}</span>
+            {% elif site.show_remaining_stock and tt.is_low_stock %}
+              <span class="badge badge-accent">{% blocktranslate with left=tt.available|num count counter=tt.available %}Only {{ left }} left{% plural %}Only {{ left }} left{% endblocktranslate %}</span>
+            {% endif %}
+          </header>
+          {% if tt.zone_label %}<p class="ticket-card__zone">{{ tt.zone_label }}</p>{% endif %}
+          <p class="ticket-card__price">
+            <span data-cur="XOF">{{ tt.price_xof|money:"XOF" }}</span>
+            <span data-cur="NGN">{{ tt.price_ngn|money:"NGN" }}</span>
+          </p>
+          {% if tt|tr:"description" %}<p class="ticket-card__desc">{{ tt|tr:"description" }}</p>{% endif %}
+          <ul class="benefits">
+            {% for benefit in tt.benefits.all %}<li>{{ benefit|tr:"text" }}</li>{% endfor %}
+          </ul>
+          <div class="ticket-card__actions">
+            {% if tt.seat_image %}
+              <button type="button" class="btn btn-outline" data-lightbox="{{ tt.seat_image.url }}" data-caption="{{ tt|tr:'name' }}{% if tt.zone_label %} — {{ tt.zone_label }}{% endif %}">{% icon "map" 18 %}{% translate "View my spot" %}</button>
+            {% endif %}
+            {% if tt.is_on_sale and sales_open %}
+              <a class="btn btn-primary" href="{{ tt.get_checkout_url }}?country=BJ" data-select>{% translate "Select" %}{% icon "arrow-right" 18 %}</a>
+            {% else %}
+              <span class="btn btn-disabled" aria-disabled="true">{% if tt.is_sold_out %}{% translate "Sold out" %}{% else %}{% translate "Not on sale" %}{% endif %}</span>
+            {% endif %}
+          </div>
+        </article>
+      {% empty %}
+        <p>{% translate "Tickets will be available soon." %}</p>
+      {% endfor %}
+    </div>
+
+    {% if event.hall_map_image %}
+      <figure class="hall-map">
+        <h3>{% translate "Hall map" %}</h3>
+        <button type="button" class="hall-map__open" data-lightbox="{{ event.hall_map_image.url }}" data-caption="{% translate 'Hall map' %}">
+          <img src="{{ event.hall_map_image.url }}" alt="{% translate 'Hall map with the position of each zone' %}" loading="lazy" width="1200" height="800">
+        </button>
+        <figcaption>{% translate "Tap the map to zoom." %}</figcaption>
+      </figure>
+    {% endif %}
+  </div>
+</section>
+
+{# ===================== VENUE & OUTLETS ===================== #}
+<section class="section section--alt" id="venue" aria-labelledby="venue-title">
+  <div class="container venue-grid">
+    <div>
+      <h2 class="section-title" id="venue-title">{% translate "Venue" %}</h2>
+      <p class="venue-name">{{ event.venue_name }}</p>
+      <address>{{ event.venue_address }}<br>{{ event.city }}, {{ event.country }}</address>
+      {% if event.map_link %}<p><a class="btn btn-primary" href="{{ event.map_link }}" target="_blank" rel="noopener">{% icon "navigation" 18 %}{% translate "Get directions" %}</a></p>{% endif %}
+      <p><a class="link link-icon" href="{% url 'core:event_ics' %}">{% icon "calendar-plus" 18 %}{% translate "Add to calendar" %}</a></p>
+    </div>
+    {% if event.map_embed_url %}
+      <div class="map-frame">
+        <iframe src="{{ event.map_embed_url }}" title="{% translate 'Map' %} — {{ event.venue_name }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if outlets %}
+    <div class="container">
+      <h3 class="subsection-title">{% translate "Buy in person" %}</h3>
+      <ul class="outlet-grid">
+        {% for outlet in outlets %}
+          <li class="card outlet">
+            <p class="outlet__name">{{ outlet.name }}</p>
+            <p>{{ outlet.address }}<br>{{ outlet.city }}, {{ outlet.country }}</p>
+            {% if outlet.opening_hours %}<p class="outlet__hours">{% icon "clock" 16 %}{{ outlet.opening_hours }}</p>{% endif %}
+            <p class="outlet__links">
+              {% if outlet.phone %}<a href="tel:{{ outlet.phone|cut:' ' }}">{% icon "phone" 16 %}{{ outlet.phone }}</a>{% endif %}
+              {% if outlet.map_link %}<a href="{{ outlet.map_link }}" target="_blank" rel="noopener">{% icon "map-pin" 16 %}{% translate "Map" %}</a>{% endif %}
+            </p>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+</section>
+
+{# ===================== ABOUT ===================== #}
+{% if site|tr:"about_text" %}
+<section class="section" id="about" aria-labelledby="about-title">
+  <div class="container about-grid">
+    <div>
+      <h2 class="section-title" id="about-title">{% translate "About" %}</h2>
+      <div class="prose">{{ site|tr:"about_text"|linebreaks }}</div>
+    </div>
+    {% if site.about_image %}<img class="about-image" src="{{ site.about_image.url }}" alt="" loading="lazy" width="800" height="600">{% endif %}
+  </div>
+</section>
+{% endif %}
+
+{# ===================== FAQ ===================== #}
+{% if faqs %}
+<section class="section section--alt" id="faq" aria-labelledby="faq-title">
+  <div class="container narrow">
+    <h2 class="section-title" id="faq-title">{% translate "FAQ" %}</h2>
+    <div class="faq">
+      {% for faq in faqs %}
+        <details class="faq__item">
+          <summary>{{ faq|tr:"question" }}</summary>
+          <div class="faq__answer">{{ faq|tr:"answer"|linebreaks }}</div>
+        </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# Shared dialogs #}
+<dialog class="dialog" id="artist-dialog" aria-label="{% translate 'Artist' %}">
+  <button type="button" class="dialog__close" data-close aria-label="{% translate 'Close' %}">{% icon "close" 22 %}</button>
+  <div data-dialog-body></div>
+</dialog>
+<dialog class="dialog dialog--image" id="lightbox" aria-label="{% translate 'Image' %}">
+  <button type="button" class="dialog__close" data-close aria-label="{% translate 'Close' %}">{% icon "close" 22 %}</button>
+  <figure><img src="" alt="" data-lightbox-img><figcaption data-lightbox-caption></figcaption></figure>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/carousel.js' %}" defer></script>
+  <script src="{% static 'js/home.js' %}" defer></script>
+{% endblock %}

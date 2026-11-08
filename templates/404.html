@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Page not found" %}{% endblock %}
+{% block sticky %}{% endblock %}
+
+{% block content %}
+<div class="container narrow">
+  <section class="result">
+    <p class="result__icon" aria-hidden="true">404</p>
+    <h1>{% translate "Page not found" %}</h1>
+    <p>{% translate "This link is wrong or has expired." %}</p>
+    <p><a class="btn btn-primary" href="{% url 'core:home' %}">{% translate "Back to home" %}</a></p>
+  </section>
+</div>
+{% endblock %}

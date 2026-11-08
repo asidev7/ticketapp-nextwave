@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% if page == "terms" %}{% translate "Terms and conditions" %}{% else %}{% translate "Privacy policy" %}{% endif %} · {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div class="container narrow">
+  <h1 class="page-title">{% if page == "terms" %}{% translate "Terms and conditions" %}{% else %}{% translate "Privacy policy" %}{% endif %}</h1>
+  <div class="prose">
+    {% if content %}{{ content|linebreaks }}{% else %}<p>{% translate "This page will be published soon." %}</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

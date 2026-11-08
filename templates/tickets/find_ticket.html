@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load i18n nwp %}
+
+{% block title %}{% translate "Find my ticket" %} · {{ site.site_name }}{% endblock %}
+{% block sticky %}{% endblock %}
+
+{% block content %}
+<div class="container narrow">
+  <h1 class="page-title">{% translate "Find my ticket" %}</h1>
+
+  {% if found %}
+    <section class="result result--success">
+      <p class="result__icon">{% icon "check" 36 %}</p>
+      <h2>{% translate "Order found" %}</h2>
+      <p>{% blocktranslate with email=found.buyer_email %}We sent your tickets again to <strong>{{ email }}</strong>.{% endblocktranslate %}</p>
+      <p><a class="btn btn-primary btn-lg" href="{{ found.get_absolute_url }}">{% translate "Show and download my tickets" %}</a></p>
+    </section>
+  {% else %}
+    <p>{% translate "Enter the e-mail used for the purchase and your order reference (NWP-…) or phone number. We will resend your tickets." %}</p>
+    <form method="post" class="card form-card" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-error" role="alert">{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>{% endif %}
+      <div class="field">
+        <label for="id_email">{{ form.email.label }}</label>
+        <input type="email" name="email" id="id_email" required autocomplete="email" value="{{ form.email.value|default_if_none:'' }}">
+        {% for e in form.email.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        <label for="id_reference">{{ form.reference.label }}</label>
+        <input type="text" name="reference" id="id_reference" required placeholder="NWP-2026-8F3K2Q" value="{{ form.reference.value|default_if_none:'' }}">
+        {% for e in form.reference.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg">{% translate "Resend my tickets" %}</button>
+      <p class="field-help">{% translate "Limited to 5 attempts per hour." %}</p>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

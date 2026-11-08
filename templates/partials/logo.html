@@ -1,0 +1,13 @@
+{# Brand: the logo uploaded in the admin (Site settings → Branding), else the built-in wave mark + wordmark. #}
+{% if site.logo %}
+  <img class="brand__logo" src="{{ site.logo.url }}" alt="{{ site.site_name }}" height="44">
+{% else %}
+  <span class="brand__mark" aria-hidden="true">
+    <svg viewBox="0 0 48 48" width="40" height="40" focusable="false">
+      <rect width="48" height="48" rx="14" class="brand__mark-bg"/>
+      <path class="brand__wave brand__wave--1" d="M6 20q4.5-7 9 0t9 0t9 0t9 0"/>
+      <path class="brand__wave brand__wave--2" d="M6 30q4.5-7 9 0t9 0t9 0t9 0"/>
+    </svg>
+  </span>
+  <span class="brand__word">NEXTWAVE <span>PARTY</span></span>
+{% endif %}

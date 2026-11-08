@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load i18n static nwp %}
+
+{% block title %}{% translate "Order" %} {{ order.reference }} · {{ event.name }}{% endblock %}
+{% block body_class %}page-order{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block sticky %}{% endblock %}
+
+{% block content %}
+<div class="container narrow order">
+
+{% if order.status == "paid" %}
+  <section class="result result--success" aria-labelledby="result-title">
+    <p class="result__icon">{% icon "check" 36 %}</p>
+    <h1 id="result-title">{% translate "Payment confirmed!" %}</h1>
+    <p>{% blocktranslate count counter=tickets|length %}Your ticket is ready.{% plural %}Your {{ counter }} tickets are ready.{% endblocktranslate %}</p>
+    <p class="result__email">{% icon "mail" %} {% blocktranslate with email=order.buyer_email %}Ticket sent to <strong>{{ email }}</strong>{% endblocktranslate %}</p>
+    <p class="result__ref">{% translate "Order" %} <strong>{{ order.reference }}</strong></p>
+  </section>
+
+  <div class="order-actions">
+    {% if tickets|length > 1 %}
+      <a class="btn btn-primary" href="{{ order_pdf_url }}" download>{% icon "download" %}{% translate "Download all (PDF)" %}</a>
+    {% else %}
+      <a class="btn btn-primary" href="{{ tickets.0.png_url }}" download>{% icon "download" %}{% translate "Download again (PNG)" %}</a>
+      <a class="btn btn-outline" href="{{ tickets.0.pdf_url }}" download>{% icon "download" %}PDF</a>
+    {% endif %}
+    <a class="btn btn-outline" href="{% url 'core:event_ics' %}">{% icon "calendar-plus" %}{% translate "Add to calendar" %}</a>
+    {% blocktranslate asvar wa_text with event=event.name %}My {{ event }} ticket:{% endblocktranslate %}
+    <a class="btn btn-outline" href="https://wa.me/?text={{ wa_text|urlencode }}%20{{ share_url|urlencode }}" target="_blank" rel="noopener">{% translate "Share on WhatsApp" %}</a>
+  </div>
+
+  <ul class="ticket-previews">
+    {% for t in tickets %}
+      <li class="card ticket-preview">
+        <a href="{{ t.png_url }}?inline=1" target="_blank" rel="noopener">
+          <img src="{{ t.png_url }}?inline=1" alt="{% translate 'Ticket' %} {{ t.ticket.code }} — {{ t.ticket.holder_name }}" width="540" height="960" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+        </a>
+        <p class="ticket-preview__code">{{ t.ticket.code }}</p>
+        <p>{{ t.ticket.holder_name }} · {{ t.category }}</p>
+        <p class="ticket-preview__links">
+          <a href="{{ t.png_url }}" download>PNG</a> · <a href="{{ t.pdf_url }}" download>PDF</a>
+        </p>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <div id="auto-download" hidden
+       data-ref="{{ order.reference }}"
+       data-url="{% if tickets|length > 1 %}{{ order_pdf_url }}{% else %}{{ tickets.0.png_url }}{% endif %}"
+       data-image="{{ tickets.0.png_url }}?inline=1"></div>
+
+  <div class="ios-save" data-ios-save hidden role="dialog" aria-modal="true" aria-labelledby="ios-save-title">
+    <div class="ios-save__inner">
+      <p id="ios-save-title" class="ios-save__title">{% translate "Press and hold the ticket, then tap “Save to Photos”." %}</p>
+      <img src="" alt="{% translate 'Your ticket' %}" data-ios-image>
+      <button type="button" class="btn btn-primary btn-block" data-ios-close>{% translate "Done" %}</button>
+    </div>
+  </div>
+
+  <p class="order-help">{% translate "Keep your QR code visible on your phone at the entrance. Lost it?" %} <a href="{% url 'tickets:find' %}">{% translate "Find my ticket" %}</a></p>
+
+{% elif order.status == "pending" %}
+  <section class="result result--pending" aria-labelledby="result-title" data-poll="{% url 'tickets:order_status' order.reference %}">
+    <div class="spinner" aria-hidden="true"></div>
+    <h1 id="result-title">{% translate "Waiting for payment confirmation…" %}</h1>
+    {% if awaiting_push %}
+      <p class="alert alert-info alert-icon">{% icon "smartphone" %}{% translate "Approve the payment on your phone: you should receive a Mobile Money prompt. Enter your PIN to confirm." %}</p>
+    {% else %}
+      <p>{% translate "This page updates automatically. Please don't close it." %}</p>
+    {% endif %}
+    <p class="result__ref">{% translate "Order" %} <strong>{{ order.reference }}</strong> · {{ order.total_display }}</p>
+    {% if order.reserved_until %}<p class="muted">{% blocktranslate with time=order.reserved_until|endate:"g:i A" %}Your tickets are reserved until {{ time }}.{% endblocktranslate %}</p>{% endif %}
+  </section>
+
+  {% if retry_gateways %}
+    <section class="card retry">
+      <h2>{% translate "Payment not completed?" %}</h2>
+      <p>{% translate "Choose a payment method to try again:" %}</p>
+      <div class="retry__buttons">
+        {% for gateway in retry_gateways %}
+          <form method="post" action="{% url 'payments:init' gateway.code order.reference %}">
+            {% csrf_token %}
+            <button class="btn btn-outline" type="submit">{{ gateway.display_name }}</button>
+          </form>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+{% else %}
+  <section class="result result--failed" aria-labelledby="result-title">
+    <p class="result__icon">{% icon "close" 36 %}</p>
+    {% if order.status == "failed" %}
+      <h1 id="result-title">{% translate "Payment failed" %}</h1>
+      <p>{% translate "Your payment was not completed. No money was taken for this order." %}</p>
+    {% else %}
+      <h1 id="result-title">{% translate "Order cancelled" %}</h1>
+      <p>{% translate "This order was cancelled or the 15-minute reservation expired." %}</p>
+    {% endif %}
+    <p class="result__ref">{% translate "Order" %} <strong>{{ order.reference }}</strong></p>
+    {% if item %}
+      <p><a class="btn btn-primary btn-lg" href="{{ item.ticket_type.get_checkout_url }}?country={{ order.country }}">{% translate "Try again" %}</a></p>
+    {% else %}
+      <p><a class="btn btn-primary btn-lg" href="{% url 'core:home' %}#tickets">{% translate "Try again" %}</a></p>
+    {% endif %}
+  </section>
+{% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/order.js' %}" defer></script>{% endblock %}

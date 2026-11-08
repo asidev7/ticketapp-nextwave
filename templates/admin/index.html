@@ -1,0 +1,137 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Dashboard" %} | {{ site_title|default:_("Django site admin") }}{% endblock %}
+
+{% block branding %}
+  {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<style>
+  .nwp { display: grid; gap: 16px; font-family: Arial, Helvetica, sans-serif; }
+  .nwp-kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .nwp-card { border: 1px solid var(--color-base-200, #E5E7EB); border-radius: 8px; padding: 16px; background: var(--color-base-50, #fff); }
+  .dark .nwp-card { border-color: var(--color-base-800, #1f2937); background: var(--color-base-900, #111827); }
+  .nwp-card h2 { font-size: 14px; font-weight: bold; margin: 0 0 12px; }
+  .nwp-label { font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: .04em; opacity: .8; margin: 0; }
+  .nwp-value { font-size: 26px; font-weight: bold; margin: 4px 0 0; }
+  .nwp-sub { font-size: 12px; margin: 2px 0 0; opacity: .85; }
+  .nwp-grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .nwp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .nwp-table th, .nwp-table td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--color-base-200, #E5E7EB); }
+  .dark .nwp-table th, .dark .nwp-table td { border-color: var(--color-base-800, #1f2937); }
+  .nwp-bar { height: 8px; background: var(--color-base-200, #E5E7EB); border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .dark .nwp-bar { background: var(--color-base-700, #374151); }
+  .nwp-bar span { display: block; height: 100%; }
+  .nwp-chart { display: flex; align-items: flex-end; gap: 8px; height: 160px; padding-top: 8px; }
+  .nwp-chart div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; font-size: 11px; gap: 4px; }
+  .nwp-chart i { display: block; width: 100%; max-width: 42px; background: #0A3D91; border-radius: 4px 4px 0 0; min-height: 2px; }
+  .dark .nwp-chart i { background: #60A5FA; }
+  .nwp-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .nwp-live { color: #16A34A; font-weight: bold; }
+  .nwp-warn { border-left: 4px solid #FF6B00; }
+  .nwp a.nwp-link { color: inherit; text-decoration: underline; }
+</style>
+
+<div class="nwp">
+  {% if not nwp.event %}
+    <div class="nwp-card nwp-warn">{% translate "No active event. Create one in Event and tick “active”." %}</div>
+  {% endif %}
+  {% if not nwp.gateways_ready %}
+    <div class="nwp-card nwp-warn">{% translate "No payment gateway is ready. Enter the API keys and activate at least one gateway." %}
+      <a class="nwp-link" href="{% url 'admin:payments_paymentgateway_changelist' %}">{% translate "Payment gateways" %}</a></div>
+  {% endif %}
+
+  <div class="nwp-kpis">
+    <div class="nwp-card"><p class="nwp-label">{% translate "Revenue XOF" %}</p><p class="nwp-value">{{ nwp.revenue_xof }}</p><p class="nwp-sub">{{ nwp.orders_xof }} {% translate "paid orders" %}</p></div>
+    <div class="nwp-card"><p class="nwp-label">{% translate "Revenue NGN" %}</p><p class="nwp-value">{{ nwp.revenue_ngn }}</p><p class="nwp-sub">{{ nwp.orders_ngn }} {% translate "paid orders" %}</p></div>
+    <div class="nwp-card"><p class="nwp-label">{% translate "Tickets issued" %}</p><p class="nwp-value">{{ nwp.tickets_issued }} / {{ nwp.capacity }}</p><p class="nwp-sub">{{ nwp.complimentary }} {% translate "complimentary" %} · {{ nwp.pending }} {% translate "pending orders" %}</p></div>
+    <div class="nwp-card"><p class="nwp-label">{% translate "Checked-in" %} <span class="nwp-live">● {% translate "live" %}</span></p><p class="nwp-value"><span data-checkin>{{ nwp.checked_in }}</span> / <span data-checkin-total>{{ nwp.checkin_total }}</span></p><p class="nwp-sub"><a class="nwp-link" href="/scan/" target="_blank">{% translate "Open the scanner" %}</a></p></div>
+  </div>
+
+  <div class="nwp-grid-2">
+    <div class="nwp-card">
+      <h2>{% translate "Sales by category" %}</h2>
+      <table class="nwp-table">
+        <thead><tr><th>{% translate "Category" %}</th><th>{% translate "Sold" %}</th><th></th><th>XOF</th><th>NGN</th></tr></thead>
+        <tbody>
+          {% for c in nwp.categories %}
+            <tr>
+              <td><span class="nwp-dot" style="background:{{ c.color }}"></span>{{ c.name }}</td>
+              <td>{{ c.sold }} / {{ c.capacity }}{% if c.reserved %} <small>(+{{ c.reserved }})</small>{% endif %}</td>
+              <td><div class="nwp-bar"><span style="width:{{ c.percent }}%;background:{{ c.color }}"></span></div></td>
+              <td>{{ c.xof }}</td>
+              <td>{{ c.ngn }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">{% translate "No ticket types yet." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nwp-card">
+      <h2>{% translate "Tickets sold — last 7 days" %}</h2>
+      <div class="nwp-chart" role="img" aria-label="{% translate 'Tickets sold per day' %}">
+        {% for d in nwp.chart %}
+          <div><strong>{{ d.value }}</strong><i style="height:{{ d.height }}%"></i><span>{{ d.label }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="nwp-grid-2">
+    <div class="nwp-card">
+      <h2>{% translate "By payment gateway" %}</h2>
+      <table class="nwp-table">
+        <thead><tr><th>{% translate "Gateway" %}</th><th>{% translate "Orders" %}</th><th>{% translate "Amount" %}</th></tr></thead>
+        <tbody>
+          {% for g in nwp.gateways %}<tr><td>{{ g.name }}</td><td>{{ g.orders }}</td><td>{{ g.total }}</td></tr>
+          {% empty %}<tr><td colspan="3">{% translate "No sales yet." %}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nwp-card">
+      <h2>{% translate "Latest scans" %}</h2>
+      <table class="nwp-table">
+        <thead><tr><th>{% translate "Time" %}</th><th>{% translate "Result" %}</th><th>{% translate "Ticket" %}</th><th>{% translate "By" %}</th></tr></thead>
+        <tbody data-recent-scans>
+          {% for log in nwp.recent_scans %}
+            <tr><td>{{ log.created_at|time:"H:i:s" }}</td><td>{{ log.get_result_display }}</td><td>{% if log.ticket %}{{ log.ticket.code }} — {{ log.ticket.holder_name }}{% else %}{{ log.raw_value|truncatechars:20 }}{% endif %}</td><td>{{ log.scanned_by|default:"—" }}</td></tr>
+          {% empty %}<tr><td colspan="4">{% translate "No scans yet." %}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Live check-in counter (refreshes every 15 s on show day).
+  (function () {
+    var fmt = new Intl.NumberFormat("en-US");
+    function refresh() {
+      fetch("{% url 'scanner:api_stats' %}", { credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          if (!data) return;
+          document.querySelector("[data-checkin]").textContent = fmt.format(data.checked_in);
+          document.querySelector("[data-checkin-total]").textContent = fmt.format(data.total);
+          var body = document.querySelector("[data-recent-scans]");
+          if (!data.recent.length) return;
+          body.innerHTML = "";
+          data.recent.slice(0, 8).forEach(function (s) {
+            var tr = document.createElement("tr");
+            [new Date(s.at).toLocaleTimeString("en-GB"), s.label, s.code + (s.holder ? " — " + s.holder : ""), s.by || "—"].forEach(function (v) {
+              var td = document.createElement("td"); td.textContent = v; tr.appendChild(td);
+            });
+            body.appendChild(tr);
+          });
+        })
+        .catch(function () {});
+    }
+    setInterval(refresh, 15000);
+  })();
+</script>
+{% endblock %}

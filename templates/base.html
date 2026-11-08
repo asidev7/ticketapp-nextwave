@@ -1,0 +1,121 @@
+{% load i18n static nwp %}<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}{{ site.site_name }}{% if active_event %} — {{ active_event.edition }}{% endif %}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ site.meta_description|default:site.site_name }}{% endblock %}">
+  <meta name="theme-color" content="{{ theme.primary }}">
+  <meta name="color-scheme" content="light">
+  <meta property="og:title" content="{{ site.site_name }}{% if active_event %} — {{ active_event.edition }}{% endif %}">
+  <meta property="og:description" content="{{ site.meta_description }}">
+  {% if active_event.poster_image %}<meta property="og:image" content="{{ SITE_URL }}{{ active_event.poster_image.url }}">{% endif %}
+  {% if site.favicon %}<link rel="icon" href="{{ site.favicon.url }}">{% else %}<link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">{% endif %}
+  <link rel="preload" href="{% static 'fonts/unbounded-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/outfit-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+  <style>:root{--primary:{{ theme.primary }};--on-primary:{{ theme.on_primary }};--link:{{ theme.link }};--accent:{{ theme.accent }};--on-accent:{{ theme.on_accent }}}</style>
+  <script>document.documentElement.classList.add("js");</script>
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main">{% translate "Skip to content" %}</a>
+  <div class="ambient" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="site-header" data-header>
+    <div class="container header-bar">
+      <a class="brand" href="{% url 'core:home' %}" aria-label="{{ site.site_name }} — {% translate 'Home' %}">
+        {% include "partials/logo.html" %}
+      </a>
+      <form class="lang-switch" action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" name="language" value="en" lang="en" title="English" {% if LANGUAGE_CODE == "en" %}aria-current="true"{% endif %} aria-label="English">{% flag_svg "en" %}<span>EN</span></button>
+        <button type="submit" name="language" value="fr" lang="fr" title="Français" {% if LANGUAGE_CODE == "fr" %}aria-current="true"{% endif %} aria-label="Français">{% flag_svg "fr" %}<span>FR</span></button>
+      </form>
+      <a class="btn btn-primary header-buy" href="{% url 'core:home' %}#tickets">{% icon "ticket" %}{% translate "Buy Ticket" %}</a>
+      <button type="button" class="menu-toggle" data-menu-toggle aria-controls="site-nav" aria-expanded="false"
+              aria-label="{% translate 'Menu' %}" data-label-open="{% translate 'Menu' %}" data-label-close="{% translate 'Close menu' %}">
+        <span class="menu-toggle__bars" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>
+    </div>
+    <nav class="main-nav" id="site-nav" aria-label="{% translate 'Main menu' %}">
+      <ul class="container">
+        <li><a href="{% url 'core:home' %}#top">{% translate "Home" %}</a></li>
+        <li><a href="{% url 'core:home' %}#lineup">{% translate "Lineup" %}</a></li>
+        <li><a href="{% url 'core:home' %}#tickets">{% translate "Tickets" %}</a></li>
+        <li><a href="{% url 'core:home' %}#venue">{% translate "Venue" %}</a></li>
+        <li><a href="{% url 'core:home' %}#about">{% translate "About" %}</a></li>
+        <li><a href="{% url 'core:home' %}#faq">{% translate "FAQ" %}</a></li>
+        <li class="nav-mobile-only"><a href="{% url 'tickets:find' %}">{% translate "Find my ticket" %}</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  {% if messages %}
+    <div class="container messages" role="status">
+      {% for message in messages %}<p class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-glow" aria-hidden="true"></div>
+    <div class="container footer-grid">
+      <div>
+        <a class="brand brand--footer" href="{% url 'core:home' %}" aria-label="{{ site.site_name }} — {% translate 'Home' %}">{% include "partials/logo.html" %}</a>
+        {% if active_event %}<p class="footer-event">{{ active_event.edition }} · {{ active_event.date_start|endate:"M j, Y" }}<br>{{ active_event.venue_name }}, {{ active_event.city }}</p>{% endif %}
+      </div>
+      <div>
+        <h2 class="footer-title">{% translate "Contact" %}</h2>
+        <ul class="footer-list">
+          {% if site.contact_email %}<li><a href="mailto:{{ site.contact_email }}">{% icon "mail" 18 %}{{ site.contact_email }}</a></li>{% endif %}
+          {% if site.contact_phone %}<li><a href="tel:{{ site.contact_phone|cut:' ' }}">{% icon "phone" 18 %}{{ site.contact_phone }}</a></li>{% endif %}
+          {% if site.whatsapp_link %}<li><a href="{{ site.whatsapp_link }}" rel="noopener" target="_blank">{% icon "whatsapp" 18 %}WhatsApp {{ site.whatsapp }}</a></li>{% endif %}
+        </ul>
+      </div>
+      <div>
+        <h2 class="footer-title">{% translate "Follow us" %}</h2>
+        <ul class="social-row">
+          {% if site.instagram %}<li><a class="social-btn" href="{{ site.instagram }}" rel="noopener" target="_blank" aria-label="Instagram">{% icon "instagram" %}</a></li>{% endif %}
+          {% if site.tiktok %}<li><a class="social-btn" href="{{ site.tiktok }}" rel="noopener" target="_blank" aria-label="TikTok">{% icon "tiktok" %}</a></li>{% endif %}
+          {% if site.facebook %}<li><a class="social-btn" href="{{ site.facebook }}" rel="noopener" target="_blank" aria-label="Facebook">{% icon "facebook" %}</a></li>{% endif %}
+          {% if site.x %}<li><a class="social-btn" href="{{ site.x }}" rel="noopener" target="_blank" aria-label="X">{% icon "x" %}</a></li>{% endif %}
+          {% if site.youtube %}<li><a class="social-btn" href="{{ site.youtube }}" rel="noopener" target="_blank" aria-label="YouTube">{% icon "youtube" %}</a></li>{% endif %}
+        </ul>
+      </div>
+      <div>
+        <h2 class="footer-title">{% translate "Help" %}</h2>
+        <ul class="footer-list">
+          <li><a href="{% url 'tickets:find' %}">{% icon "search" 18 %}{% translate "Find my ticket" %}</a></li>
+          <li><a href="{% url 'core:terms' %}">{% translate "Terms" %}</a></li>
+          <li><a href="{% url 'core:privacy' %}">{% translate "Privacy" %}</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="container footer-copy">
+      <p>© {% now "Y" %} {{ site.site_name }}. {% translate "All rights reserved." %}</p>
+      <p class="made-by">{% translate "Made by" %} <strong>ASITECH Solution</strong></p>
+    </div>
+  </footer>
+
+  {% block sticky %}
+    {% if active_event %}
+      <div class="sticky-buy" role="region" aria-label="{% translate 'Buy Ticket' %}">
+        {% with prices=active_event.min_prices %}
+          {% if prices.XOF %}<span class="sticky-buy__from">{% translate "From" %} <strong>{{ prices.XOF|money:"XOF" }}</strong></span>{% endif %}
+        {% endwith %}
+        <a class="btn btn-accent" href="{% url 'core:home' %}#tickets">{% icon "ticket" %}{% translate "Buy Ticket" %}</a>
+      </div>
+    {% endif %}
+  {% endblock %}
+
+  <script src="{% static 'js/nav.js' %}" defer></script>
+  <script src="{% static 'js/fx.js' %}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

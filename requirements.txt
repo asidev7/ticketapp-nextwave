@@ -1,0 +1,27 @@
+# NextWave Party — Python 3.12
+Django>=5.2,<5.3
+django-environ>=0.12
+django-unfold>=0.70
+django-ratelimit>=4.1
+whitenoise>=6.9
+
+# Tickets
+qrcode[pil]>=8.0
+Pillow>=11.0
+weasyprint>=65.0          # needs Pango (see README); falls back to Pillow PDF
+
+# Async
+celery[redis]>=5.5
+packaging>=24.0          # required by kombu's Redis transport
+redis>=5.2
+
+# Payments & security
+requests>=2.32
+cryptography>=44.0
+
+# Exports
+openpyxl>=3.1
+
+# Production
+gunicorn>=23.0
+psycopg[binary]>=3.2

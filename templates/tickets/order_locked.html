@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n nwp %}
+
+{% block title %}{% translate "Order" %} {{ reference }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block sticky %}{% endblock %}
+
+{% block content %}
+<div class="container narrow">
+  <section class="result">
+    <p class="result__icon">{% icon "lock" 32 %}</p>
+    <h1>{% translate "Open the link from your e-mail" %}</h1>
+    <p>{% translate "For your security, tickets are only shown on the device used for the purchase or through the link sent by e-mail." %}</p>
+    <p><a class="btn btn-primary" href="{% url 'tickets:find' %}">{% translate "Find my ticket" %}</a></p>
+  </section>
+</div>
+{% endblock %}

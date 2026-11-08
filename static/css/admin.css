@@ -1,0 +1,5 @@
+/* Admin: Arial everywhere except the icon font. */
+html body,
+html body *:not(.material-symbols-outlined):not([class*="material-symbols"]) {
+  font-family: Arial, Helvetica, sans-serif;
+}

@@ -1,0 +1,66 @@
+# docker compose up -d --build
+# Then: docker compose exec web python manage.py createsuperuser
+#       docker compose exec web python manage.py seed_demo   (optional demo content)
+x-app: &app
+  build: .
+  env_file: .env
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+    DATABASE_URL: postgres://nextwave:${POSTGRES_PASSWORD:-nextwave}@db:5432/nextwave
+    REDIS_URL: redis://redis:6379/0
+  volumes:
+    # Named volumes by default; set MEDIA_DIR / PRIVATE_MEDIA_DIR in .env to host
+    # folders so the host Nginx can serve /media/ directly.
+    - ${MEDIA_DIR:-media}:/app/media
+    - ${PRIVATE_MEDIA_DIR:-private_media}:/app/private_media
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_started
+  restart: unless-stopped
+
+services:
+  web:
+    <<: *app
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DATABASE_URL: postgres://nextwave:${POSTGRES_PASSWORD:-nextwave}@db:5432/nextwave
+      REDIS_URL: redis://redis:6379/0
+      RUN_MIGRATIONS: "1"
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8000}:8000"   # Nginx on the host proxies to this port
+
+  celery:
+    <<: *app
+    command: ["celery", "-A", "config", "worker", "--loglevel=INFO", "--concurrency=2"]
+
+  celery-beat:
+    <<: *app
+    command: ["celery", "-A", "config", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: nextwave
+      POSTGRES_USER: nextwave
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nextwave}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextwave -d nextwave"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  media:
+  private_media:

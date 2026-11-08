@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block sticky %}{% endblock %}
+
+{% block content %}
+<div class="container narrow">
+  <section class="result">
+    <h1>{{ site.site_name }}</h1>
+    <p>{% translate "The next edition will be announced soon. Stay tuned!" %}</p>
+  </section>
+</div>
+{% endblock %}

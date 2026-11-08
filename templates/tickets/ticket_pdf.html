@@ -1,0 +1,84 @@
+{% load i18n %}<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: 105mm 148mm; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, Helvetica, "Liberation Sans", sans-serif; color: #111827; }
+  .page { width: 105mm; height: 148mm; position: relative; display: flex; flex-direction: column; page-break-after: always; overflow: hidden; }
+  .page:last-child { page-break-after: auto; }
+  .band { position: relative; padding: 4.5mm 6mm 3.5mm; }
+  .band h1 { margin: 0; font-size: 17pt; line-height: 1.1; letter-spacing: .3pt; }
+  .band .edition { margin: 1mm 0 2.5mm; font-size: 9.5pt; }
+  .band .logo { position: absolute; top: 5mm; right: 6mm; max-width: 16mm; max-height: 16mm; }
+  .pill { display: inline-block; background: #fff; color: #111827; font-weight: bold; font-size: 9pt; padding: 1mm 3.5mm; border-radius: 10mm; }
+  .holder { display: flex; align-items: center; padding: 3mm 6mm 2mm; gap: 4mm; }
+  .holder img { width: 18mm; height: 18mm; border-radius: 50%; }
+  .label { margin: 0; font-size: 6.5pt; font-weight: bold; color: #4B5563; letter-spacing: .4pt; text-transform: uppercase; }
+  .holder .name { margin: .5mm 0; font-size: 12.5pt; font-weight: bold; line-height: 1.15; }
+  .holder .cat { margin: 0; font-size: 8.5pt; }
+  .info { display: flex; padding: 2mm 6mm 1mm; border-top: .3mm solid #E5E7EB; gap: 4mm; }
+  .info > div { flex: 1; }
+  .info .value { margin: .2mm 0 1.2mm; font-size: 9pt; font-weight: bold; }
+  .info .sub { margin: 0; font-size: 7.5pt; color: #4B5563; }
+  .benefits { margin: 0 6mm; padding: 0; list-style: none; font-size: 7.5pt; }
+  .benefits li { margin: .2mm 0; }
+  .benefits li::before { content: "✓ "; color: #16A34A; font-weight: bold; }
+  .qr { margin-top: auto; text-align: center; }
+  .qr img { width: 41mm; height: 41mm; border: .3mm solid #E5E7EB; border-radius: 2mm; padding: 1.5mm; background: #fff; }
+  .qr .code { margin: .5mm 0 0; font-size: 13pt; font-weight: bold; letter-spacing: .6pt; }
+  .footer { padding: 1mm 0 3mm; text-align: center; font-size: 6.8pt; }
+  .footer .ref { color: #4B5563; margin: 0; }
+  .footer .rule { font-weight: bold; margin: .4mm 0 0; }
+</style>
+</head>
+<body>
+{% for p in pages %}
+  <section class="page">
+    <div class="band" style="background: {{ p.color }}; color: {{ p.band_text }};">
+      {% if logo_uri %}<img class="logo" src="{{ logo_uri }}" alt="">{% endif %}
+      <h1>{{ p.event.name|upper }}</h1>
+      <p class="edition">{{ p.event.edition }}</p>
+      <span class="pill">{{ p.category|upper }}</span>
+    </div>
+
+    <div class="holder">
+      <img src="{{ p.avatar_uri }}" alt="">
+      <div>
+        <p class="label">{% translate "TICKET HOLDER" %}</p>
+        <p class="name">{{ p.ticket.holder_name }}</p>
+        <p class="cat">{{ p.category }}{% if p.zone %} · {{ p.zone }}{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="info">
+      <div>
+        <p class="label">{% translate "DATE" %}</p>
+        <p class="value">{{ p.date }}</p>
+        <p class="label">{% translate "DOORS · SHOW" %}</p>
+        <p class="value">{% if p.doors %}{{ p.doors }} · {% endif %}{{ p.show }}</p>
+      </div>
+      <div>
+        <p class="label">{% translate "VENUE" %}</p>
+        <p class="value">{{ p.event.venue_name }}</p>
+        <p class="sub">{{ p.event.venue_address }}, {{ p.event.city }}</p>
+      </div>
+    </div>
+
+    {% if p.benefits %}
+      <ul class="benefits">{% for b in p.benefits|slice:":3" %}<li>{{ b }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <div class="qr">
+      <img src="{{ p.qr_uri }}" alt="QR">
+      <p class="code">{{ p.ticket.code }}</p>
+    </div>
+    <div class="footer">
+      <p class="ref">{% translate "Order" %} {{ p.order.reference }}</p>
+      <p class="rule">{% translate "Non transferable — 1 entry only" %}</p>
+    </div>
+  </section>
+{% endfor %}
+</body>
+</html>

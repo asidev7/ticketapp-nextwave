@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Payment" %} · {{ order.reference }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block sticky %}{% endblock %}
+
+{% block content %}
+<div class="container narrow">
+  <h1 class="page-title">{% translate "Pay with FeexPay" %}</h1>
+  <p>{% translate "Order" %} <strong>{{ order.reference }}</strong> · <strong>{{ order.total_display }}</strong></p>
+
+  <form method="post" class="card form-card">
+    {% csrf_token %}
+    {% if error %}<p class="alert alert-error" role="alert">{{ error }}</p>{% endif %}
+
+    <fieldset class="step">
+      <legend>{% translate "Mobile Money" %}</legend>
+      <div class="field">
+        <label for="id_phone">{% translate "Mobile Money number" %}</label>
+        <input type="tel" name="phone" id="id_phone" value="{{ phone }}" inputmode="tel" autocomplete="tel">
+        <p class="field-help">{% translate "You will receive a prompt on this phone to confirm with your PIN." %}</p>
+      </div>
+      <div class="option-grid">
+        {% for code, label in networks.items %}
+          <button type="submit" name="method" value="{{ code }}" class="btn btn-primary btn-block">{{ label }}</button>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <fieldset class="step">
+      <legend>{% translate "Bank card" %}</legend>
+      <div class="option-grid option-grid--2">
+        {% for code, label in cards.items %}
+          <button type="submit" name="method" value="{{ code }}" class="btn btn-outline btn-block">{{ label }}</button>
+        {% endfor %}
+      </div>
+    </fieldset>
+  </form>
+</div>
+{% endblock %}

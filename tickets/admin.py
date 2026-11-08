@@ -1,0 +1,473 @@
+import base64
+import csv
+
+from django import forms
+from django.contrib import admin, messages
+from django.http import HttpResponse
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.html import format_html, format_html_join
+from django.utils.translation import gettext_lazy as _
+from unfold.admin import ModelAdmin, TabularInline
+from unfold.decorators import action
+from unfold.widgets import (
+    UnfoldAdminIntegerFieldWidget,
+    UnfoldAdminSelectWidget,
+    UnfoldAdminTextInputWidget,
+)
+
+from core.admin import thumb
+from core.models import Event
+from core.storage import private_storage
+from core.tasks import dispatch
+from core.utils import format_money, format_number, process_holder_photo
+
+from .models import ComplimentaryOrder, Order, OrderItem, Ticket, TicketBenefit, TicketType
+from .qr import make_qr_png
+from .services import StockError, cancel_order, fulfil_order, issue_complimentary, recount_stock
+from .tasks import regenerate_ticket_files, resend_order_email
+from .tokens import order_access_url, ticket_download_url
+
+STATUS_COLORS = {
+    "paid": ("#DCFCE7", "#14532D"),
+    "valid": ("#DCFCE7", "#14532D"),
+    "pending": ("#FEF3C7", "#78350F"),
+    "used": ("#DBEAFE", "#1E3A8A"),
+    "failed": ("#FEE2E2", "#7F1D1D"),
+    "cancelled": ("#E5E7EB", "#111827"),
+    "refunded": ("#E5E7EB", "#111827"),
+}
+
+
+def badge(value: str, label: str):
+    bg, fg = STATUS_COLORS.get(value, ("#E5E7EB", "#111827"))
+    return format_html(
+        '<span style="background:{};color:{};padding:2px 10px;border-radius:999px;font-weight:bold;font-size:12px">{}</span>',
+        bg, fg, label,
+    )
+
+
+# --------------------------------------------------------------------------
+# Ticket types
+# --------------------------------------------------------------------------
+class TicketBenefitInline(TabularInline):
+    model = TicketBenefit
+    extra = 1
+    fields = ("text_en", "text_fr", "order")
+    ordering_field = "order"
+    hide_ordering_field = True
+
+
+@admin.register(TicketType)
+class TicketTypeAdmin(ModelAdmin):
+    list_display = ("name_en", "zone_label", "price_xof_display", "price_ngn_display", "stock", "is_active")
+    list_filter = ("event", "is_active")
+    search_fields = ("name_en", "name_fr", "zone_label")
+    prepopulated_fields = {"slug": ("name_en",)}
+    readonly_fields = ("sold", "reserved", "available_display", "seat_preview")
+    inlines = [TicketBenefitInline]
+    ordering_field = "order"
+    hide_ordering_field = True
+    actions = ["recount"]
+    fieldsets = (
+        (None, {"fields": ("event", "name_en", "name_fr", "slug", "color", "is_active")}),
+        (_("Prices"), {"fields": ("price_xof", "price_ngn")}),
+        (_("Stock"), {"fields": ("capacity", "sold", "reserved", "available_display", "sale_start", "sale_end")}),
+        (_("Description"), {"fields": ("description_en", "description_fr")}),
+        (_("Spot in the hall"), {"fields": ("zone_label", "seat_image", "seat_preview")}),
+    )
+
+    @admin.display(description=_("Price XOF"), ordering="price_xof")
+    def price_xof_display(self, obj):
+        return format_money(obj.price_xof, "XOF")
+
+    @admin.display(description=_("Price NGN"), ordering="price_ngn")
+    def price_ngn_display(self, obj):
+        return format_money(obj.price_ngn, "NGN")
+
+    @admin.display(description=_("Sold / capacity"))
+    def stock(self, obj):
+        return f"{format_number(obj.sold)} / {format_number(obj.capacity)} (+{obj.reserved} reserved)"
+
+    @admin.display(description=_("Available"))
+    def available_display(self, obj):
+        return format_number(obj.available)
+
+    @admin.display(description=_("Preview"))
+    def seat_preview(self, obj):
+        return thumb(obj.seat_image, 220)
+
+    @action(description=_("Recount sold / reserved from orders"))
+    def recount(self, request, queryset):
+        for ticket_type in queryset:
+            recount_stock(ticket_type)
+        messages.success(request, _("Stock counters rebuilt."))
+
+
+# --------------------------------------------------------------------------
+# Orders
+# --------------------------------------------------------------------------
+class OrderItemInline(TabularInline):
+    model = OrderItem
+    extra = 0
+    can_delete = False
+    fields = ("ticket_type", "quantity", "unit_price")
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class TicketInline(TabularInline):
+    model = Ticket
+    extra = 0
+    can_delete = False
+    fields = ("code_link", "holder_name", "ticket_type", "status", "checked_in_at", "email_sent_at", "download_count")
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description=_("Code"))
+    def code_link(self, obj):
+        return format_html('<a href="{}">{}</a>', reverse("admin:tickets_ticket_change", args=[obj.pk]), obj.code)
+
+
+class OrderExportMixin:
+    EXPORT_HEADERS = [
+        "Reference", "Status", "Created", "Paid at", "Buyer", "E-mail", "Phone", "Country",
+        "Currency", "Subtotal", "Fees", "Total", "Gateway", "Transaction", "Tickets", "Complimentary",
+    ]
+
+    def _rows(self, queryset):
+        for order in queryset.select_related("gateway").prefetch_related("items"):
+            yield [
+                order.reference,
+                order.status,
+                timezone.localtime(order.created_at).strftime("%Y-%m-%d %H:%M"),
+                timezone.localtime(order.paid_at).strftime("%Y-%m-%d %H:%M") if order.paid_at else "",
+                order.buyer_name,
+                order.buyer_email,
+                order.buyer_phone,
+                order.country,
+                order.currency,
+                order.subtotal,
+                order.fees,
+                order.total_amount,
+                order.gateway.display_name if order.gateway else "",
+                order.gateway_transaction_id,
+                order.quantity,
+                "yes" if order.is_complimentary else "",
+            ]
+
+    @action(description=_("Export CSV"))
+    def export_csv(self, request, queryset):
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="orders-{timezone.now():%Y%m%d-%H%M}.csv"'
+        response.write("﻿")  # Excel-friendly UTF-8
+        writer = csv.writer(response)
+        writer.writerow(self.EXPORT_HEADERS)
+        writer.writerows(self._rows(queryset))
+        return response
+
+    @action(description=_("Export Excel"))
+    def export_xlsx(self, request, queryset):
+        from openpyxl import Workbook
+        from openpyxl.styles import Font
+
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Orders"
+        sheet.append(self.EXPORT_HEADERS)
+        for cell in sheet[1]:
+            cell.font = Font(bold=True)
+        for row in self._rows(queryset):
+            sheet.append(row)
+        for column in sheet.columns:
+            sheet.column_dimensions[column[0].column_letter].width = 18
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = f'attachment; filename="orders-{timezone.now():%Y%m%d-%H%M}.xlsx"'
+        workbook.save(response)
+        return response
+
+
+@admin.register(Order)
+class OrderAdmin(OrderExportMixin, ModelAdmin):
+    list_display = ("reference", "buyer_name", "buyer_email", "country_flag", "total", "status_badge", "gateway", "created_at")
+    list_filter = ("status", "country", "gateway", "is_complimentary", ("created_at", admin.DateFieldListFilter))
+    search_fields = ("reference", "buyer_email", "buyer_phone", "buyer_name", "gateway_transaction_id", "tickets__code")
+    date_hierarchy = "created_at"
+    list_select_related = ("gateway",)
+    inlines = [OrderItemInline, TicketInline]
+    actions = ["resend_tickets", "mark_as_paid", "cancel_orders", "export_csv", "export_xlsx"]
+    actions_detail = ["resend_detail", "mark_paid_detail"]
+    readonly_fields = (
+        "reference", "event", "status_badge", "country", "currency", "subtotal", "fees", "total",
+        "gateway", "gateway_transaction_id", "gateway_payload", "reserved_until", "is_complimentary",
+        "ip_address", "created_at", "paid_at", "access_link",
+    )
+    fieldsets = (
+        (None, {"fields": ("reference", "event", "status_badge", "access_link")}),
+        (_("Buyer"), {"fields": ("buyer_name", "buyer_email", "buyer_phone", "country", "language")}),
+        (_("Amount"), {"fields": ("currency", "subtotal", "fees", "total")}),
+        (_("Payment"), {"fields": ("gateway", "gateway_transaction_id", "gateway_payload", "reserved_until", "created_at", "paid_at", "ip_address")}),
+        (_("Notes"), {"fields": ("is_complimentary", "note")}),
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    @admin.display(description=_("Status"), ordering="status")
+    def status_badge(self, obj):
+        return badge(obj.status, obj.get_status_display())
+
+    @admin.display(description=_("Total"), ordering="total_amount")
+    def total(self, obj):
+        return obj.total_display
+
+    @admin.display(description=_("Country"), ordering="country")
+    def country_flag(self, obj):
+        return {"BJ": "🇧🇯 BJ", "NG": "🇳🇬 NG"}.get(obj.country, obj.country)
+
+    @admin.display(description=_("Buyer link"))
+    def access_link(self, obj):
+        if not obj.pk or obj.status != Order.Status.PAID:
+            return "—"
+        url = order_access_url(obj)
+        return format_html('<a href="{}" target="_blank" rel="noopener">{}</a>', url, _("Open the buyer's ticket page"))
+
+    # -- bulk actions -------------------------------------------------------
+    @action(description=_("Resend tickets by e-mail"))
+    def resend_tickets(self, request, queryset):
+        count = 0
+        for order in queryset.filter(status=Order.Status.PAID):
+            dispatch(resend_order_email, order.pk)
+            count += 1
+        messages.success(request, _("%(count)s order(s) queued for e-mail.") % {"count": count})
+
+    @action(description=_("Mark as paid (manual)"))
+    def mark_as_paid(self, request, queryset):
+        count = 0
+        for order in queryset.exclude(status__in=[Order.Status.PAID, Order.Status.REFUNDED]):
+            _order, created = fulfil_order(order.pk, transaction_id="manual", note=f"Marked as paid by {request.user}")
+            count += int(created)
+        messages.success(request, _("%(count)s order(s) marked as paid — tickets issued.") % {"count": count})
+
+    @action(description=_("Cancel"))
+    def cancel_orders(self, request, queryset):
+        count = sum(1 for order in queryset if cancel_order(order.pk, reason=f"Cancelled by {request.user}"))
+        messages.success(request, _("%(count)s order(s) cancelled.") % {"count": count})
+
+    # -- detail buttons -----------------------------------------------------
+    @action(description=_("Resend tickets"), url_path="resend")
+    def resend_detail(self, request, object_id):
+        order = Order.objects.get(pk=object_id)
+        if order.status == Order.Status.PAID:
+            dispatch(resend_order_email, order.pk)
+            messages.success(request, _("Tickets sent again to %(email)s.") % {"email": order.buyer_email})
+        else:
+            messages.error(request, _("Only paid orders have tickets."))
+        return redirect(reverse("admin:tickets_order_change", args=[object_id]))
+
+    @action(description=_("Mark as paid (manual)"), url_path="mark-paid")
+    def mark_paid_detail(self, request, object_id):
+        order = Order.objects.get(pk=object_id)
+        if order.status in (Order.Status.PAID, Order.Status.REFUNDED):
+            messages.info(request, _("This order is already %(status)s.") % {"status": order.get_status_display()})
+        else:
+            fulfil_order(order.pk, transaction_id="manual", note=f"Marked as paid by {request.user}")
+            messages.success(request, _("Order marked as paid — tickets issued and e-mailed."))
+        return redirect(reverse("admin:tickets_order_change", args=[object_id]))
+
+
+# --------------------------------------------------------------------------
+# Complimentary tickets
+# --------------------------------------------------------------------------
+class ComplimentaryForm(forms.ModelForm):
+    ticket_type = forms.ModelChoiceField(
+        label=_("Ticket type"), queryset=TicketType.objects.all(), widget=UnfoldAdminSelectWidget
+    )
+    quantity = forms.IntegerField(label=_("Quantity"), min_value=1, max_value=50, initial=1, widget=UnfoldAdminIntegerFieldWidget)
+    holder_names = forms.CharField(
+        label=_("Holder names"), required=False, widget=UnfoldAdminTextInputWidget,
+        help_text=_("Optional, comma-separated (one per ticket). Empty = guest name."),
+    )
+    holder_photo = forms.FileField(label=_("Holder photo"), required=False, help_text=_("Optional, used on the first ticket."))
+
+    class Meta:
+        model = ComplimentaryOrder
+        fields = ("buyer_name", "buyer_email", "buyer_phone", "language", "note")
+        labels = {"buyer_name": _("Guest name"), "buyer_email": _("Send tickets to (e-mail)")}
+
+    def clean_holder_photo(self):
+        upload = self.cleaned_data.get("holder_photo")
+        return process_holder_photo(upload) if upload else None
+
+    def clean(self):
+        cleaned = super().clean()
+        ticket_type, quantity = cleaned.get("ticket_type"), cleaned.get("quantity")
+        if ticket_type and quantity and ticket_type.available < quantity:
+            self.add_error("quantity", _("Only %(count)s ticket(s) left in this category.") % {"count": ticket_type.available})
+        return cleaned
+
+
+@admin.register(ComplimentaryOrder)
+class ComplimentaryOrderAdmin(ModelAdmin):
+    form = ComplimentaryForm
+    list_display = ("reference", "buyer_name", "buyer_email", "tickets_count", "created_at")
+    search_fields = ("reference", "buyer_name", "buyer_email")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(is_complimentary=True)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description=_("Tickets"))
+    def tickets_count(self, obj):
+        return obj.tickets.count()
+
+    def save_model(self, request, obj, form, change):
+        data = form.cleaned_data
+        event = Event.get_active() or data["ticket_type"].event
+        names = [n.strip() for n in (data.get("holder_names") or "").split(",") if n.strip()]
+        holders = [{"name": name, "photo": ""} for name in names]
+        if data.get("holder_photo") is not None:
+            path = private_storage().save(f"holders/{data['holder_photo'].name}", data["holder_photo"])
+            if holders:
+                holders[0]["photo"] = path
+            else:
+                holders = [{"name": data["buyer_name"], "photo": path}]
+        try:
+            order = issue_complimentary(
+                event=event,
+                ticket_type=data["ticket_type"],
+                quantity=data["quantity"],
+                buyer_name=data["buyer_name"],
+                buyer_email=data["buyer_email"],
+                buyer_phone=data.get("buyer_phone") or "",
+                language=data.get("language") or "en",
+                holders=holders,
+                note=data.get("note") or "",
+            )
+        except StockError as exc:
+            messages.error(request, str(exc))
+            raise
+        obj.pk = order.pk
+        obj.reference = order.reference
+        obj.created_at = order.created_at
+
+    def add_view(self, request, form_url="", extra_context=None):
+        try:
+            return super().add_view(request, form_url, extra_context)
+        except StockError:
+            return redirect(reverse("admin:tickets_complimentaryorder_add"))
+
+    def response_add(self, request, obj, post_url_continue=None):
+        messages.success(request, _("Complimentary tickets issued and e-mailed to %(email)s.") % {"email": obj.buyer_email})
+        return redirect(reverse("admin:tickets_order_change", args=[obj.pk]))
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        return redirect(reverse("admin:tickets_order_change", args=[object_id]))
+
+
+# --------------------------------------------------------------------------
+# Tickets
+# --------------------------------------------------------------------------
+@admin.register(Ticket)
+class TicketAdmin(ModelAdmin):
+    list_display = ("code", "holder_name", "ticket_type", "status_badge", "order_link", "checked_in_at", "download_count")
+    list_filter = ("status", "ticket_type", "order__country", ("checked_in_at", admin.DateFieldListFilter))
+    search_fields = ("code", "holder_name", "order__reference", "order__buyer_email", "order__buyer_phone")
+    list_select_related = ("order", "ticket_type")
+    actions = ["regenerate", "cancel_tickets", "reset_checkin"]
+    actions_detail = ["regenerate_detail", "reset_checkin_detail"]
+    readonly_fields = (
+        "code", "uuid", "order_link", "ticket_type", "status_badge", "qr_preview", "photo_preview",
+        "checked_in_at", "checked_in_by", "email_sent_at", "download_count", "downloads", "created_at",
+    )
+    fieldsets = (
+        (None, {"fields": ("code", "status_badge", "order_link", "ticket_type", "holder_name", "holder_photo", "photo_preview")}),
+        (_("QR code & files"), {"fields": ("qr_preview", "downloads", "uuid")}),
+        (_("Entrance"), {"fields": ("checked_in_at", "checked_in_by", "email_sent_at", "download_count", "created_at")}),
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    @admin.display(description=_("Status"), ordering="status")
+    def status_badge(self, obj):
+        return badge(obj.status, obj.get_status_display())
+
+    @admin.display(description=_("Order"), ordering="order__reference")
+    def order_link(self, obj):
+        return format_html('<a href="{}">{}</a>', reverse("admin:tickets_order_change", args=[obj.order_id]), obj.order.reference)
+
+    @admin.display(description=_("QR code"))
+    def qr_preview(self, obj):
+        if not obj.pk:
+            return "—"
+        data = base64.b64encode(make_qr_png(obj.qr_token, size=240)).decode()
+        return format_html('<img src="data:image/png;base64,{}" width="240" height="240" alt="QR">', data)
+
+    @admin.display(description=_("Photo"))
+    def photo_preview(self, obj):
+        if not obj.holder_photo:
+            return "—"
+        url = reverse("scanner:photo", args=[obj.uuid])
+        return format_html('<img src="{}" alt="" style="width:160px;height:160px;object-fit:cover;border-radius:50%">', url)
+
+    @admin.display(description=_("Download"))
+    def downloads(self, obj):
+        if not obj.pk or obj.order.status != Order.Status.PAID:
+            return "—"
+        links = [(ticket_download_url(obj, "png"), "PNG"), (ticket_download_url(obj, "pdf"), "PDF")]
+        return format_html_join(" · ", '<a href="{}">{}</a>', links)
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if change and {"holder_name", "holder_photo"} & set(form.changed_data):
+            if "holder_photo" in form.changed_data and obj.holder_photo:
+                processed = process_holder_photo(obj.holder_photo.file)
+                obj.holder_photo.save(processed.name, processed, save=True)
+            dispatch(regenerate_ticket_files, obj.pk)
+            messages.info(request, _("Ticket files regenerated."))
+
+    @action(description=_("Regenerate ticket files"))
+    def regenerate(self, request, queryset):
+        for ticket in queryset:
+            dispatch(regenerate_ticket_files, ticket.pk)
+        messages.success(request, _("Regeneration queued."))
+
+    @action(description=_("Cancel tickets"))
+    def cancel_tickets(self, request, queryset):
+        count = queryset.exclude(status=Ticket.Status.CANCELLED).update(status=Ticket.Status.CANCELLED)
+        messages.success(request, _("%(count)s ticket(s) cancelled.") % {"count": count})
+
+    @action(description=_("Reset check-in"))
+    def reset_checkin(self, request, queryset):
+        count = queryset.filter(status=Ticket.Status.USED).update(
+            status=Ticket.Status.VALID, checked_in_at=None, checked_in_by=None
+        )
+        messages.success(request, _("%(count)s check-in(s) reset.") % {"count": count})
+
+    @action(description=_("Regenerate files"), url_path="regenerate")
+    def regenerate_detail(self, request, object_id):
+        dispatch(regenerate_ticket_files, int(object_id))
+        messages.success(request, _("Ticket files regenerated."))
+        return redirect(reverse("admin:tickets_ticket_change", args=[object_id]))
+
+    @action(description=_("Reset check-in"), url_path="reset-checkin")
+    def reset_checkin_detail(self, request, object_id):
+        Ticket.objects.filter(pk=object_id, status=Ticket.Status.USED).update(
+            status=Ticket.Status.VALID, checked_in_at=None, checked_in_by=None
+        )
+        messages.success(request, _("Check-in reset."))
+        return redirect(reverse("admin:tickets_ticket_change", args=[object_id]))

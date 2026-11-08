@@ -1,0 +1,25 @@
+{% load i18n %}{% autoescape off %}{{ event.name|upper }} — {{ event.edition }}
+
+{% blocktranslate with name=order.buyer_name %}Hello {{ name }},{% endblocktranslate %}
+
+{% blocktranslate count counter=tickets|length %}Thank you! Your ticket is attached to this e-mail (PDF and PNG).{% plural %}Thank you! Your {{ counter }} tickets are attached to this e-mail (PDF and PNG).{% endblocktranslate %}
+
+{% translate "Order" %}: {{ order.reference }}
+{% translate "Date" %}: {{ date }}
+{% translate "Doors · Show" %}: {% if doors %}{{ doors }} · {% endif %}{{ show }}
+{% translate "Venue" %}: {{ event.venue_name }}, {{ event.venue_address }}, {{ event.city }}
+{% if not order.is_complimentary %}{% translate "Total paid" %}: {{ order.total_display }}{% endif %}
+
+{% translate "Your tickets" %}:
+{% for item in tickets %}- {{ item.ticket.code }} — {{ item.ticket.holder_name }} ({{ item.category }}{% if item.zone %} · {{ item.zone }}{% endif %})
+{% endfor %}
+{% translate "View & download my tickets" %}: {{ access_url }}
+
+{% translate "At the entrance" %}: {% translate "Show the QR code on your phone (screen brightness up) or printed. Each QR code is valid for one entry only. Do not share it." %}
+{% if practical_info %}
+{% translate "Practical information" %}:
+{{ practical_info }}
+{% endif %}
+{% if site.contact_email %}{% translate "Questions?" %} {{ site.contact_email }}{% endif %}
+{{ site_url }}
+{% endautoescape %}

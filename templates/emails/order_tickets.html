@@ -1,0 +1,67 @@
+{% load i18n nwp %}<!doctype html>
+<html lang="{{ order.language }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ event.name }} — {{ order.reference }}</title>
+</head>
+<body style="margin:0;padding:0;background:#F4F6FA;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F6FA;">
+    <tr><td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;">
+        <tr>
+          <td style="background:#0A3D91;padding:24px;border-radius:12px 12px 0 0;">
+            <p style="margin:0;font-size:24px;font-weight:bold;color:#FFFFFF;">{{ event.name|upper }}</p>
+            <p style="margin:4px 0 0;font-size:16px;color:#FFFFFF;">{{ event.edition }}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px;font-size:16px;line-height:1.6;">
+            <p style="margin:0 0 12px;">{% blocktranslate with name=order.buyer_name %}Hello {{ name }},{% endblocktranslate %}</p>
+            <p style="margin:0 0 16px;">{% blocktranslate count counter=tickets|length %}Thank you! Your ticket is attached to this e-mail (PDF and PNG).{% plural %}Thank you! Your {{ counter }} tickets are attached to this e-mail (PDF and PNG).{% endblocktranslate %}</p>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E5E7EB;border-radius:8px;margin:0 0 16px;">
+              <tr><td style="padding:12px 16px;border-bottom:1px solid #E5E7EB;"><strong>{% translate "Order" %}</strong></td><td style="padding:12px 16px;border-bottom:1px solid #E5E7EB;" align="right">{{ order.reference }}</td></tr>
+              <tr><td style="padding:12px 16px;border-bottom:1px solid #E5E7EB;"><strong>{% translate "Date" %}</strong></td><td style="padding:12px 16px;border-bottom:1px solid #E5E7EB;" align="right">{{ date }}</td></tr>
+              <tr><td style="padding:12px 16px;border-bottom:1px solid #E5E7EB;"><strong>{% translate "Doors · Show" %}</strong></td><td style="padding:12px 16px;border-bottom:1px solid #E5E7EB;" align="right">{% if doors %}{{ doors }} · {% endif %}{{ show }}</td></tr>
+              <tr><td style="padding:12px 16px;border-bottom:1px solid #E5E7EB;"><strong>{% translate "Venue" %}</strong></td><td style="padding:12px 16px;border-bottom:1px solid #E5E7EB;" align="right">{{ event.venue_name }}<br>{{ event.venue_address }}, {{ event.city }}</td></tr>
+              {% if not order.is_complimentary %}<tr><td style="padding:12px 16px;"><strong>{% translate "Total paid" %}</strong></td><td style="padding:12px 16px;" align="right">{{ order.total_display }}</td></tr>{% endif %}
+            </table>
+
+            <p style="margin:0 0 8px;font-weight:bold;">{% translate "Your tickets" %}</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+              {% for item in tickets %}
+                <tr><td style="padding:8px 0;border-bottom:1px solid #E5E7EB;">
+                  <strong>{{ item.ticket.code }}</strong> — {{ item.ticket.holder_name }}<br>
+                  <span style="color:#4B5563;">{{ item.category }}{% if item.zone %} · {{ item.zone }}{% endif %}</span>
+                </td></tr>
+              {% endfor %}
+            </table>
+
+            <p style="margin:0 0 24px;" align="center">
+              <a href="{{ access_url }}" style="display:inline-block;background:#0A3D91;color:#FFFFFF;font-weight:bold;text-decoration:none;padding:14px 28px;border-radius:8px;">{% translate "View & download my tickets" %}</a>
+            </p>
+
+            <p style="margin:0 0 8px;font-weight:bold;">{% translate "At the entrance" %}</p>
+            <p style="margin:0 0 16px;">{% translate "Show the QR code on your phone (screen brightness up) or printed. Each QR code is valid for one entry only. Do not share it." %}</p>
+
+            {% if practical_info %}
+              <p style="margin:0 0 8px;font-weight:bold;">{% translate "Practical information" %}</p>
+              <div style="margin:0 0 16px;">{{ practical_info|linebreaks }}</div>
+            {% endif %}
+
+            {% if event.map_link %}<p style="margin:0 0 16px;"><a href="{{ event.map_link }}" style="color:#0A3D91;font-weight:bold;">{% translate "Get directions" %}</a></p>{% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 24px;border-top:1px solid #E5E7EB;font-size:14px;color:#4B5563;line-height:1.6;">
+            {% if site.contact_email %}{% translate "Questions?" %} <a href="mailto:{{ site.contact_email }}" style="color:#0A3D91;">{{ site.contact_email }}</a>{% endif %}
+            {% if site.whatsapp %} · WhatsApp {{ site.whatsapp }}{% endif %}<br>
+            <a href="{{ site_url }}" style="color:#0A3D91;">{{ site_url }}</a>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
