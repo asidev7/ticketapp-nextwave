@@ -29,7 +29,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if not options["skip_images"]:
             DEMO_DIR.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(FIXTURES / "poster.jpg", DEMO_DIR / "poster.jpg")
+            shutil.copyfile(FIXTURES / "poster.jpg", DEMO_DIR / "poster-xmas.jpg")
         call_command("loaddata", str(FIXTURES / "demo.json"), verbosity=0)
         self.stdout.write(self.style.SUCCESS("Event content loaded: 1 event (2 days), 34 artists, 3 ticket types, 8 FAQ."))
 
