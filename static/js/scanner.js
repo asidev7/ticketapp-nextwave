@@ -19,11 +19,6 @@
   var scanner = null;
   var audio = null;
 
-  // ---------- Service worker (installable PWA) ----------
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register(cfg.sw, { scope: "/scan/" }).catch(function () {});
-  }
-
   // Keep the screen awake while scanning.
   function keepAwake() {
     if ("wakeLock" in navigator) {
@@ -99,7 +94,6 @@
     var result = data.result;
     resultBox.className = "result r-" + result;
     var ok = result === "accepted" || result === "staff";
-    resultBox.querySelector("[data-result-status]").textContent = (ok ? "✓ " : "✕ ") + label(result);
     var photo = resultBox.querySelector("[data-result-photo]");
     if (ticket.photo_url && result !== "invalid") {
       photo.src = ticket.photo_url;
@@ -108,16 +102,22 @@
       photo.hidden = true;
       photo.removeAttribute("src");
     }
-    resultBox.querySelector("[data-result-name]").textContent = ticket.holder_name || "";
+    var entry = data.entry || {};
+    var status = (ok ? "✓ " : "✕ ") + label(result);
+    if (result === "accepted" && entry.days > 1) status += " · " + cfg.lDay + " " + entry.day + "/" + entry.days;
+    resultBox.querySelector("[data-result-status]").textContent = status;
+    resultBox.querySelector("[data-result-name]").textContent = ticket.holder_name || (ticket.serial ? "No. " + ticket.serial : "");
     resultBox.querySelector("[data-result-detail]").textContent =
       [ticket.category, ticket.zone].filter(Boolean).join(" · ");
     var extra = "";
     if (result === "already_used") {
-      extra = cfg.lFirstScan + " " + (data.first_scan_at || "") + (data.first_scanned_by ? " — " + cfg.lBy + " " + data.first_scanned_by : "");
+      extra = (entry.days > 1 ? cfg.lToday + " — " : "") + cfg.lFirstScan + " " + (data.first_scan_at || "") + (data.first_scanned_by ? " — " + cfg.lBy + " " + data.first_scanned_by : "");
+    } else if (result === "wrong_day") {
+      extra = cfg.lValidDays + " " + (data.valid_days || "");
     } else if (result === "invalid") {
       extra = cfg.lUnknown;
     } else if (ticket.code) {
-      extra = ticket.code;
+      extra = ticket.code + (ticket.serial && ticket.holder_name ? " · No. " + ticket.serial : "");
     }
     resultBox.querySelector("[data-result-extra]").textContent = extra;
     resultBox.hidden = false;
@@ -175,7 +175,7 @@
       body: JSON.stringify({ value: value })
     })
       .then(function (response) {
-        if (response.status === 403) { window.location.href = "/scan/login/?next=/scan/"; return null; }
+        if (response.status === 403) { window.location.href = "/scan/login/?next=/scan/"; return null; } // access revoked
         if (!response.ok) throw new Error("HTTP " + response.status);
         return response.json();
       })

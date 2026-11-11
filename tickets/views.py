@@ -55,9 +55,11 @@ def checkout(request, slug):
     gateways = available_gateways()
     on_sale = site.sales_open and ticket_type.is_on_sale()
 
-    country = request.GET.get("country", BENIN)
-    if country not in COUNTRY_CURRENCY:
-        country = BENIN
+    # Only the currencies this ticket is sold in (e.g. a Naira-only table).
+    countries = [code for code in ("NG", BENIN) if ticket_type.price_for(COUNTRY_CURRENCY[code]) > 0] or [BENIN]
+    country = request.GET.get("country", countries[0])
+    if country not in countries:
+        country = countries[0]
 
     form_kwargs = {"ticket_type": ticket_type, "site": site, "gateways": gateways}
     if request.method == "POST" and on_sale:
@@ -91,7 +93,7 @@ def checkout(request, slug):
                     logger.error("Could not start payment for %s: %s", order.reference, exc)
                     messages.error(request, _("The payment could not be started. Please try again or choose another method."))
                     return redirect(order.get_absolute_url())
-        country = form.data.get("country", country)
+        country = form.data.get("country", country) if form.data.get("country") in countries else country
     else:
         form = CheckoutForm(initial={"country": country, "quantity": 1}, **form_kwargs)
 
@@ -105,6 +107,7 @@ def checkout(request, slug):
             "gateways": gateways,
             "on_sale": on_sale,
             "country": country,
+            "countries": countries,
             "prices": {"XOF": ticket_type.price_xof, "NGN": ticket_type.price_ngn},
             "fees": {"XOF": site.service_fee_xof, "NGN": site.service_fee_ngn},
             "phone_prefixes": PHONE_PREFIX,

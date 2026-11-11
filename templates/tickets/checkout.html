@@ -9,13 +9,15 @@
 <div class="container narrow checkout">
   <p><a class="back-link" href="{% url 'core:home' %}#tickets">{% icon "arrow-left" 18 %}{% translate "Back to tickets" %}</a></p>
 
-  <section class="card checkout-summary" style="--tt-color: {{ ticket_type.color }}" aria-labelledby="checkout-title">
-    <p class="eyebrow">{{ event.name }} · {{ event.edition }}</p>
-    <h1 id="checkout-title">{{ ticket_type|tr:"name" }}{% if ticket_type.zone_label %} <small>· {{ ticket_type.zone_label }}</small>{% endif %}</h1>
-    <p class="checkout-summary__meta"><span>{% icon "calendar" 18 %}{{ event.date_start|endate:"D, M j, Y · g:i A" }}</span><span>{% icon "map-pin" 18 %}{{ event.venue_name }}</span></p>
-    {% if ticket_type.benefits.all %}
-      <ul class="benefits benefits--compact">{% for b in ticket_type.benefits.all %}<li>{{ b|tr:"text" }}</li>{% endfor %}</ul>
-    {% endif %}
+  <section class="card checkout-summary" aria-labelledby="checkout-title">
+    <p class="eyebrow">{{ event.name }} {{ event.edition }}</p>
+    <h1 id="checkout-title">{{ ticket_type|tr:"name" }}</h1>
+    <p class="checkout-summary__price">{% if prices.NGN %}{{ prices.NGN|poster_price:"NGN" }}{% endif %}{% if prices.NGN and prices.XOF %} · {% endif %}{% if prices.XOF %}{{ prices.XOF|poster_price:"XOF" }}{% endif %}</p>
+    <p class="checkout-summary__meta">
+      <span>{% icon "calendar" 18 %}{{ event.dates_label }} · {{ event.time_label }}{% if event.is_multi_day %} {% translate "daily" %}{% endif %}</span>
+      <span>{% icon "map-pin" 18 %}{{ event.venue_name }}</span>
+      {% if event.is_multi_day %}<span>{% icon "ticket" 18 %}{% blocktranslate with n=event.days %}1 ticket = {{ n }} days{% endblocktranslate %}</span>{% endif %}
+    </p>
   </section>
 
   {% if not on_sale %}
@@ -24,51 +26,60 @@
     </p>
     <p><a class="btn btn-primary" href="{% url 'core:home' %}#tickets">{% translate "See other tickets" %}</a></p>
   {% else %}
-  <form method="post" class="checkout-form" id="checkout-form"
+  <form method="post" class="checkout-card checkout-form" id="checkout-form"
         data-price-xof="{{ prices.XOF }}" data-price-ngn="{{ prices.NGN }}"
         data-fee-xof="{{ fees.XOF }}" data-fee-ngn="{{ fees.NGN }}"
         data-prefix-bj="{{ phone_prefixes.BJ }}" data-prefix-ng="{{ phone_prefixes.NG }}"
+        data-max="{{ max_quantity }}"
         data-label-pay="{% translate 'Pay' %}" data-label-processing="{% translate 'Processing…' %}"
-        data-label-holder="{% translate 'Ticket' %}" data-label-name="{% translate 'Holder name (optional)' %}">
+        data-label-holder="{% translate 'Ticket' %}">
     {% csrf_token %}
 
     {% if form.non_field_errors %}
       <div class="alert alert-error" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
     {% endif %}
 
-    {# ---------- Step 1: country ---------- #}
-    <fieldset class="step">
-      <legend><span class="step__num" aria-hidden="true">1</span> {% translate "Country & currency" %}</legend>
-      <div class="option-grid option-grid--2">
-        <label class="option-card">
-          <input type="radio" name="country" value="BJ" required {% if country == "BJ" %}checked{% endif %}>
-          <span class="option-card__body"><span class="option-card__flag">{% flag_svg "BJ" %}</span><span><strong>{% translate "Benin" %}</strong><small>XOF (FCFA)</small></span></span>
-        </label>
-        <label class="option-card">
-          <input type="radio" name="country" value="NG" required {% if country == "NG" %}checked{% endif %}>
-          <span class="option-card__body"><span class="option-card__flag">{% flag_svg "NG" %}</span><span><strong>{% translate "Nigeria" %}</strong><small>NGN (Naira)</small></span></span>
-        </label>
+    <div class="field-row">
+      {# Currency #}
+      <fieldset class="form-block">
+        <legend class="form-label">{% translate "Pay in" %}</legend>
+        <div class="segmented">
+          {% for code in countries %}
+            <label>
+              <input type="radio" name="country" value="{{ code }}" required {% if country == code %}checked{% endif %}>
+              <span>{% flag_svg code %}{% if code == "NG" %}Naira{% else %}CFA{% endif %}</span>
+            </label>
+          {% endfor %}
+        </div>
+        {% for error in form.country.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </fieldset>
+
+      {# Quantity #}
+      <div class="form-block">
+        <label class="form-label" for="id_quantity">{{ form.quantity.label }}</label>
+        <div class="stepper" data-stepper>
+          <button type="button" data-step="-1" aria-label="{% translate 'One less' %}">−</button>
+          <input type="number" name="quantity" id="id_quantity" min="1" max="{{ max_quantity }}" inputmode="numeric" required
+                 value="{{ form.quantity.value|default:1 }}" data-quantity>
+          <button type="button" data-step="1" aria-label="{% translate 'One more' %}">+</button>
+        </div>
+        {% for error in form.quantity.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
-      {% for error in form.country.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
-    </fieldset>
+    </div>
 
-    {# ---------- Step 2: buyer ---------- #}
-    <fieldset class="step">
-      <legend><span class="step__num" aria-hidden="true">2</span> {% translate "Your details" %}</legend>
-
-      <div class="field">
-        <label for="id_full_name">{{ form.full_name.label }}</label>
-        <input type="text" name="full_name" id="id_full_name" maxlength="120" required autocomplete="name" value="{{ form.full_name.value|default_if_none:'' }}" {% if form.full_name.errors %}aria-invalid="true"{% endif %}>
-        {% for error in form.full_name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
-      </div>
-
+    {# Buyer #}
+    <div class="field">
+      <label for="id_full_name">{{ form.full_name.label }}</label>
+      <input type="text" name="full_name" id="id_full_name" maxlength="120" required autocomplete="name" value="{{ form.full_name.value|default_if_none:'' }}" {% if form.full_name.errors %}aria-invalid="true"{% endif %}>
+      {% for error in form.full_name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="field-row">
       <div class="field">
         <label for="id_email">{{ form.email.label }}</label>
         <input type="email" name="email" id="id_email" required autocomplete="email" inputmode="email" value="{{ form.email.value|default_if_none:'' }}" aria-describedby="email-help" {% if form.email.errors %}aria-invalid="true"{% endif %}>
         <p class="field-help" id="email-help">{{ form.email.help_text }}</p>
         {% for error in form.email.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
-
       <div class="field">
         <label for="id_phone">{{ form.phone.label }}</label>
         <div class="input-prefix">
@@ -77,24 +88,17 @@
         </div>
         {% for error in form.phone.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
+    </div>
 
-      <div class="field">
-        <label for="id_quantity">{{ form.quantity.label }}</label>
-        <select name="quantity" id="id_quantity" data-quantity>
-          {% for value, label in form.fields.quantity.choices %}
-            <option value="{{ value }}" {% if form.quantity.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-        <p class="field-help">{% blocktranslate with n=max_quantity %}Up to {{ n }} tickets per order. One QR code per person.{% endblocktranslate %}</p>
-      </div>
+    <details class="extra-names" data-extra-wrap hidden>
+      <summary>{% translate "Names on the other tickets (optional)" %}</summary>
+      <div data-extra-holders></div>
+    </details>
 
-      <div class="extra-holders" data-extra-holders></div>
-    </fieldset>
-
-    {# ---------- Step 3: payment ---------- #}
-    <fieldset class="step">
-      <legend><span class="step__num" aria-hidden="true">3</span> {% translate "Payment" %}</legend>
-      <div class="option-grid">
+    {# Payment #}
+    <fieldset class="form-block">
+      <legend class="form-label">{% translate "Payment method" %}</legend>
+      <div class="pay-options">
         {% for gateway in gateways %}
           <label class="option-card gateway-option" data-gateway-country="{{ gateway.country }}">
             <input type="radio" name="gateway" value="{{ gateway.pk }}" required {% if form.gateway.value|stringformat:"s" == gateway.pk|stringformat:"s" %}checked{% endif %}>
@@ -105,28 +109,24 @@
           </label>
         {% endfor %}
       </div>
-      <p class="alert alert-info" data-no-gateway {% if gateways %}hidden{% endif %}>{% translate "Online payment is not available for this country yet. Please use a physical outlet." %}</p>
+      <p class="alert alert-info" data-no-gateway {% if gateways %}hidden{% endif %}>{% translate "Online payment is not available for this currency yet. Call us to book." %}</p>
       {% for error in form.gateway.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
-
-      <table class="summary" aria-label="{% translate 'Order summary' %}">
-        <tbody>
-          <tr><th scope="row">{% translate "Ticket" %}</th><td>{{ ticket_type|tr:"name" }}</td></tr>
-          <tr><th scope="row">{% translate "Quantity" %}</th><td data-sum-qty>1</td></tr>
-          <tr><th scope="row">{% translate "Unit price" %}</th><td data-sum-unit>{{ prices.XOF|money:"XOF" }}</td></tr>
-          <tr data-fee-row {% if not fees.XOF and not fees.NGN %}hidden{% endif %}><th scope="row">{% translate "Fees" %}</th><td data-sum-fees>{{ fees.XOF|money:"XOF" }}</td></tr>
-          <tr class="summary__total"><th scope="row">{% translate "Total" %}</th><td data-sum-total>{{ prices.XOF|add:fees.XOF|money:"XOF" }}</td></tr>
-        </tbody>
-      </table>
-
-      <label class="checkbox">
-        <input type="checkbox" name="accept_terms" required {% if form.accept_terms.value %}checked{% endif %}>
-        <span>{% url 'core:terms' as terms_url %}{% blocktranslate %}I accept the <a href="{{ terms_url }}" target="_blank">terms and conditions</a>{% endblocktranslate %}</span>
-      </label>
-      {% for error in form.accept_terms.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
-
-      <button type="submit" class="btn btn-primary btn-lg btn-block" data-pay-button>{% translate "Pay" %} {{ prices.XOF|add:fees.XOF|money:"XOF" }}</button>
-      <p class="secure-note">{% icon "lock" 16 %}{% translate "Secure payment. Your ticket is issued as soon as the payment is confirmed, then downloaded to your phone and sent by e-mail." %}</p>
     </fieldset>
+
+    <p class="total-line" aria-live="polite">
+      <span>{% translate "Total" %}</span>
+      <strong data-sum-total>{{ prices.XOF|add:fees.XOF|money:"XOF" }}</strong>
+    </p>
+    <p class="total-line__detail muted" data-sum-detail></p>
+
+    <label class="checkbox">
+      <input type="checkbox" name="accept_terms" required {% if form.accept_terms.value %}checked{% endif %}>
+      <span>{% url 'core:terms' as terms_url %}{% blocktranslate %}I accept the <a href="{{ terms_url }}" target="_blank">terms and conditions</a>{% endblocktranslate %}</span>
+    </label>
+    {% for error in form.accept_terms.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+
+    <button type="submit" class="btn btn-primary btn-lg btn-block" data-pay-button>{% translate "Pay" %}</button>
+    <p class="secure-note">{% icon "lock" 16 %}{% translate "Secure payment. Your ticket with its QR code is downloaded to your phone and sent by e-mail as soon as the payment is confirmed." %}</p>
   </form>
   {% endif %}
 </div>

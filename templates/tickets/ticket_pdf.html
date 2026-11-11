@@ -1,4 +1,4 @@
-<!doctype html>
+{% load l10n %}{% localize off %}<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -13,4 +13,4 @@
 <body>
 {% for uri in pages %}<img src="{{ uri }}" alt="">{% endfor %}
 </body>
-</html>
+</html>{% endlocalize %}

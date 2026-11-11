@@ -299,8 +299,17 @@ UNFOLD = {
                     {"title": _("Orders"), "icon": "shopping_cart", "link": reverse_lazy("admin:tickets_order_changelist")},
                     {"title": _("Tickets"), "icon": "confirmation_number", "link": reverse_lazy("admin:tickets_ticket_changelist")},
                     {"title": _("Complimentary tickets"), "icon": "redeem", "link": reverse_lazy("admin:tickets_complimentaryorder_changelist")},
-                    {"title": _("Scan logs"), "icon": "qr_code_scanner", "link": reverse_lazy("admin:scanner_scanlog_changelist")},
+                    {"title": _("Print batches"), "icon": "print", "link": reverse_lazy("admin:tickets_printbatch_changelist")},
                     {"title": _("Staff cards"), "icon": "badge", "link": reverse_lazy("admin:scanner_staffcard_changelist")},
+                ],
+            },
+            {
+                "title": _("Entrance"),
+                "separator": True,
+                "items": [
+                    {"title": _("Scanner accesses"), "icon": "key", "link": reverse_lazy("admin:scanner_scanneraccess_changelist")},
+                    {"title": _("Entries"), "icon": "how_to_reg", "link": reverse_lazy("admin:scanner_checkin_changelist")},
+                    {"title": _("Scan logs"), "icon": "qr_code_scanner", "link": reverse_lazy("admin:scanner_scanlog_changelist")},
                 ],
             },
             {
@@ -308,7 +317,7 @@ UNFOLD = {
                 "separator": True,
                 "items": [
                     {"title": _("Event"), "icon": "event", "link": reverse_lazy("admin:core_event_changelist")},
-                    {"title": _("Hero slides"), "icon": "view_carousel", "link": reverse_lazy("admin:core_heroslide_changelist")},
+                    {"title": _("YouTube videos"), "icon": "smart_display", "link": reverse_lazy("admin:core_eventvideo_changelist")},
                     {"title": _("Artists"), "icon": "mic_external_on", "link": reverse_lazy("admin:lineup_artist_changelist")},
                     {"title": _("Artist categories"), "icon": "category", "link": reverse_lazy("admin:lineup_artistcategory_changelist")},
                     {"title": _("Ticket types"), "icon": "sell", "link": reverse_lazy("admin:tickets_tickettype_changelist")},

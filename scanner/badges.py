@@ -1,10 +1,10 @@
 """Staff cards — member-card format 85.6 × 54 mm (CR80), rendered at 400 dpi.
 
-Photo, first and last name, role band in the role colour, optional title,
-and a signed QR (NWS:…) that the entrance scanner accepts as "STAFF".
+Same look as the event poster: red background with snowflakes, white names,
+gold title, photo in a white frame, a signed QR (NWS:…) that the entrance
+scanner accepts as "STAFF", and a band in the role colour.
 """
 import io
-import math
 
 from django.db import transaction
 from django.utils import translation
@@ -12,18 +12,26 @@ from django.utils.translation import gettext as _
 from PIL import Image, ImageDraw, ImageOps
 
 from core.models import SiteSettings
+from core.poster import GOLD, GOLD_LIGHT, WHITE, red_background
 from core.utils import hex_to_rgb, text_color_on
-from tickets.render import _en_date, _fit_font, _png_bytes, _replace, _text_width, font, images_to_pdf
 from tickets.qr import make_qr_image
+from tickets.render import (
+    _cap_height,
+    _fit_font,
+    _gradient_text,
+    _png_bytes,
+    _replace,
+    _text_at_cap,
+    _text_width,
+    font,
+    images_to_pdf,
+)
 
 from .models import StaffCard
 
 CARD_MM = (85.6, 54.0)
 W, H = 1350, 852
-NAVY = (11, 27, 58)
-BLUE = (10, 61, 145)
-WHITE = (255, 255, 255)
-SOFT = (203, 213, 225)  # light grey on navy: contrast > 10:1
+BAND_TOP = 640
 
 
 def _rounded(image: Image.Image, size: tuple[int, int], radius: int) -> Image.Image:
@@ -36,91 +44,80 @@ def _rounded(image: Image.Image, size: tuple[int, int], radius: int) -> Image.Im
     return result
 
 
-def _brand_mark(size: int, accent: tuple) -> Image.Image:
-    """The NextWave wave mark (used when no logo is uploaded)."""
-    scale = 4
-    mark = Image.new("RGBA", (size * scale, size * scale), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(mark)
-    s = size * scale
-    draw.rounded_rectangle([0, 0, s - 1, s - 1], radius=int(s * 0.29), fill=BLUE)
-    for base, color in ((0.42, WHITE), (0.62, accent)):
-        points = [(s * (0.12 + 0.76 * t / 60), s * (base - 0.07 * math.sin(2 * math.pi * 2 * t / 60))) for t in range(61)]
-        draw.line(points, fill=color, width=int(s * 0.07), joint="curve")
-    return mark.resize((size, size), Image.Resampling.LANCZOS)
-
-
 def render_card_image(card: StaffCard) -> Image.Image:
     site = SiteSettings.load()
     event = card.event
-    role_color = card.color
-    accent = hex_to_rgb(site.accent_color or "#FF6B00")
-
-    img = Image.new("RGB", (W, H), NAVY)
-
-    # Decorative shapes (no text on them)
-    deco = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    d = ImageDraw.Draw(deco)
-    d.ellipse([W - 420, -520, W + 620, 420], fill=(*BLUE, 255))
-    d.ellipse([W - 300, -400, W + 500, 300], outline=(*accent, 90), width=6)
-    d.ellipse([-260, H - 330, 200, H + 130], outline=(*hex_to_rgb(role_color), 110), width=10)
-    img = Image.alpha_composite(img.convert("RGBA"), deco).convert("RGB")
+    img = red_background((W, H), glow=(0.4, 0.3), seed=card.pk or 9)
     draw = ImageDraw.Draw(img)
 
-    # Header: logo/mark + event name
+    # Header: logo (if any) + event title + edition in gold
     x = 56
-    logo = None
     if site.logo:
         try:
             with site.logo.open("rb") as fh:
                 logo = Image.open(fh).convert("RGBA")
-                logo.thumbnail((96, 96))
+                logo.thumbnail((84, 84))
+            img.paste(logo, (x, 44 + (84 - logo.height) // 2), logo)
+            x += logo.width + 24
         except (OSError, ValueError):
-            logo = None
-    mark = logo or _brand_mark(84, accent)
-    img.paste(mark, (x, 44 + (84 - mark.height) // 2), mark)
-    tx = x + mark.width + 24
-    draw.text((tx, 46), event.name.upper(), font=_fit_font(draw, event.name.upper(), 640, 44, 28), fill=WHITE)
-    draw.text((tx, 100), f"{event.edition} · {_en_date(event.date_start, 'M j, Y')}", font=font(26), fill=SOFT)
+            pass
+    title = event.name.upper()
+    title_font = _fit_font(draw, title, W - x - 56 - 260, 64, 34, family="black")
+    _text_at_cap(draw, x, 52, title, title_font, WHITE)
+    sub = " · ".join(part for part in (event.edition.upper(), event.dates_label) if part)
+    _gradient_text(img, x, 52 + _cap_height(title_font) + 18, sub, _fit_font(draw, sub, W - x - 56 - 260, 30, 20, family="heavy"))
+    draw = ImageDraw.Draw(img)
+    staff = _("STAFF PASS")
+    _text_at_cap(draw, W - 56 - _text_width(draw, staff, font(24, family="heavy")) - 5 * (len(staff) - 1), 58, staff,
+                 font(24, family="heavy"), GOLD_LIGHT, tracking=5)
 
     # Photo with a white frame
-    frame = 344
-    draw.rounded_rectangle([56, 186, 56 + frame, 186 + frame], radius=36, fill=WHITE)
+    frame, top = 330, 196
+    draw.rounded_rectangle([56, top, 56 + frame, top + frame], radius=30, fill=WHITE)
     if card.photo:
         try:
             with card.photo.open("rb") as fh:
-                photo = _rounded(Image.open(fh).copy(), (frame - 16, frame - 16), 30)
-            img.paste(photo, (64, 194), photo)
+                photo = _rounded(Image.open(fh).copy(), (frame - 16, frame - 16), 24)
+            img.paste(photo, (64, top + 8), photo)
         except (OSError, ValueError):
             pass
 
-    # Names & title
-    nx, n_width = 56 + frame + 40, W - (56 + frame + 40) - 56 - 300 - 32
-    first = card.first_name
+    # Names, title, code
+    nx = 56 + frame + 40
+    n_width = W - nx - 56 - 290 - 30
+    first_font = _fit_font(draw, card.first_name.upper(), n_width, 54, 28, family="heavy")
+    _text_at_cap(draw, nx, top + 12, card.first_name.upper(), first_font, WHITE)
     last = card.last_name.upper()
-    draw.text((nx, 198), first, font=_fit_font(draw, first, n_width, 60, 30), fill=WHITE)
-    draw.text((nx, 270), last, font=_fit_font(draw, last, n_width, 60, 30), fill=WHITE)
+    last_font = _fit_font(draw, last, n_width, 86, 36, family="display")
+    last_top = top + 12 + _cap_height(first_font) + 20
+    _text_at_cap(draw, nx, last_top, last, last_font, WHITE)
+    y = last_top + _cap_height(last_font) + 28
     if card.title:
-        draw.text((nx, 352), card.title, font=_fit_font(draw, card.title, n_width, 32, 20, bold=False), fill=SOFT)
-    draw.text((nx, 452), card.code, font=font(28, True), fill=SOFT)
+        title_font = _fit_font(draw, card.title, n_width, 32, 20, family="bold")
+        _text_at_cap(draw, nx, y, card.title, title_font, GOLD_LIGHT)
+        y += _cap_height(title_font) + 26
+    _text_at_cap(draw, nx, top + frame - 26, card.code, font(26, family="bold"), WHITE, tracking=2)
 
-    # QR on a white square, top right
-    box, qr_size = 300, 264
-    bx, by = W - 56 - box, 186
-    draw.rounded_rectangle([bx, by, bx + box, by + box], radius=24, fill=WHITE)
+    # QR on a white square
+    box, qr_size = 290, 258
+    bx, by = W - 56 - box, top
+    draw.rounded_rectangle([bx, by, bx + box, by + box], radius=22, fill=WHITE)
     qr = make_qr_image(card.qr_token, box_size=20, border=1).resize((qr_size, qr_size), Image.Resampling.NEAREST)
     img.paste(qr, (bx + (box - qr_size) // 2, by + (box - qr_size) // 2))
 
-    # Role band
-    band_top = 600
-    draw.rectangle([0, band_top, W, H], fill=hex_to_rgb(role_color))
+    # Role band (role colour, gold edge)
+    role_color = card.color
+    draw.rectangle([0, BAND_TOP - 8, W, BAND_TOP], fill=GOLD)
+    draw.rectangle([0, BAND_TOP, W, H], fill=hex_to_rgb(role_color))
     on_band = hex_to_rgb(text_color_on(role_color))
     role = card.get_role_display().upper()
-    role_font = _fit_font(draw, role, W - 56 - 56 - 260, 112, 54)
-    draw.text((56, band_top + (H - band_top - role_font.size) / 2 - 10), role, font=role_font, fill=on_band)
+    role_font = _fit_font(draw, role, W - 56 - 56 - 280, 150, 60, family="display")
+    _text_at_cap(draw, 56, BAND_TOP + (H - BAND_TOP - _cap_height(role_font)) / 2, role, role_font, on_band, tracking=2)
     access = _("ACCESS")
     year = str(event.date_start.year)
-    draw.text((W - 56 - _text_width(draw, access, font(30, True)), band_top + 70), access, font=font(30, True), fill=on_band)
-    draw.text((W - 56 - _text_width(draw, year, font(56, True)), band_top + 110), year, font=font(56, True), fill=on_band)
+    access_font, year_font = font(28, family="heavy"), font(64, family="display")
+    _text_at_cap(draw, W - 56 - _text_width(draw, access, access_font), BAND_TOP + 54, access, access_font, on_band)
+    _text_at_cap(draw, W - 56 - _text_width(draw, year, year_font), BAND_TOP + 98, year, year_font, on_band)
     return img
 
 

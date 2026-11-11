@@ -26,11 +26,11 @@
   .nwp-bar span { display: block; height: 100%; }
   .nwp-chart { display: flex; align-items: flex-end; gap: 8px; height: 160px; padding-top: 8px; }
   .nwp-chart div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; font-size: 11px; gap: 4px; }
-  .nwp-chart i { display: block; width: 100%; max-width: 42px; background: #0A3D91; border-radius: 4px 4px 0 0; min-height: 2px; }
+  .nwp-chart i { display: block; width: 100%; max-width: 42px; background: #C8102E; border-radius: 4px 4px 0 0; min-height: 2px; }
   .dark .nwp-chart i { background: #60A5FA; }
   .nwp-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
   .nwp-live { color: #16A34A; font-weight: bold; }
-  .nwp-warn { border-left: 4px solid #FF6B00; }
+  .nwp-warn { border-left: 4px solid #F5B921; }
   .nwp a.nwp-link { color: inherit; text-decoration: underline; }
 </style>
 
@@ -46,8 +46,8 @@
   <div class="nwp-kpis">
     <div class="nwp-card"><p class="nwp-label">{% translate "Revenue XOF" %}</p><p class="nwp-value">{{ nwp.revenue_xof }}</p><p class="nwp-sub">{{ nwp.orders_xof }} {% translate "paid orders" %}</p></div>
     <div class="nwp-card"><p class="nwp-label">{% translate "Revenue NGN" %}</p><p class="nwp-value">{{ nwp.revenue_ngn }}</p><p class="nwp-sub">{{ nwp.orders_ngn }} {% translate "paid orders" %}</p></div>
-    <div class="nwp-card"><p class="nwp-label">{% translate "Tickets issued" %}</p><p class="nwp-value">{{ nwp.tickets_issued }} / {{ nwp.capacity }}</p><p class="nwp-sub">{{ nwp.complimentary }} {% translate "complimentary" %} · {{ nwp.pending }} {% translate "pending orders" %}</p></div>
-    <div class="nwp-card"><p class="nwp-label">{% translate "Checked-in" %} <span class="nwp-live">● {% translate "live" %}</span></p><p class="nwp-value"><span data-checkin>{{ nwp.checked_in }}</span> / <span data-checkin-total>{{ nwp.checkin_total }}</span></p><p class="nwp-sub"><a class="nwp-link" href="/scan/" target="_blank">{% translate "Open the scanner" %}</a></p></div>
+    <div class="nwp-card"><p class="nwp-label">{% translate "Tickets issued" %}</p><p class="nwp-value">{{ nwp.tickets_issued }} / {{ nwp.capacity }}</p><p class="nwp-sub">{{ nwp.printed }} {% translate "printed" %} · {{ nwp.complimentary }} {% translate "complimentary" %} · {{ nwp.pending }} {% translate "pending orders" %}</p></div>
+    <div class="nwp-card"><p class="nwp-label">{% translate "Checked-in" %} <span class="nwp-live">● {% translate "live" %}</span></p><p class="nwp-value"><span data-checkin>{{ nwp.checked_in }}</span> / <span data-checkin-total>{{ nwp.checkin_total }}</span></p><p class="nwp-sub">{% for d in nwp.per_day %}{% translate "Day" %} {{ d.n }} ({{ d.label }}): <strong>{{ d.count }}</strong>{% if not forloop.last %} · {% endif %}{% endfor %}<br><a class="nwp-link" href="/scan/" target="_blank">{% translate "Open the scanner" %}</a></p></div>
   </div>
 
   <div class="nwp-grid-2">
@@ -99,7 +99,7 @@
         <thead><tr><th>{% translate "Time" %}</th><th>{% translate "Result" %}</th><th>{% translate "Ticket" %}</th><th>{% translate "By" %}</th></tr></thead>
         <tbody data-recent-scans>
           {% for log in nwp.recent_scans %}
-            <tr><td>{{ log.created_at|time:"H:i:s" }}</td><td>{{ log.get_result_display }}</td><td>{% if log.ticket %}{{ log.ticket.code }} — {{ log.ticket.holder_name }}{% elif log.staff_card %}{{ log.staff_card.code }} — {{ log.staff_card.full_name }}{% else %}{{ log.raw_value|truncatechars:20 }}{% endif %}</td><td>{{ log.scanned_by|default:"—" }}</td></tr>
+            <tr><td>{{ log.created_at|time:"H:i:s" }}</td><td>{{ log.get_result_display }}</td><td>{% if log.ticket %}{{ log.ticket.code }} — {{ log.ticket.holder_name }}{% elif log.staff_card %}{{ log.staff_card.code }} — {{ log.staff_card.full_name }}{% else %}{{ log.raw_value|truncatechars:20 }}{% endif %}</td><td>{{ log.scanner_access|default:log.scanned_by|default:"—" }}</td></tr>
           {% empty %}<tr><td colspan="4">{% translate "No scans yet." %}</td></tr>{% endfor %}
         </tbody>
       </table>

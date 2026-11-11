@@ -89,13 +89,15 @@ def dashboard_callback(request, context):
                 "capacity": format_number(total_capacity),
                 "pending": Order.objects.filter(status=Order.Status.PENDING).count(),
                 "complimentary": issued.filter(order__is_complimentary=True).count(),
+                "printed": issued.filter(order__print_batch__isnull=False).count(),
+                "per_day": counts["per_day"],
                 "categories": categories,
                 "chart": chart,
                 "gateways": gateways,
                 "gateways_ready": sum(1 for g in PaymentGateway.objects.filter(is_active=True) if g.is_configured),
                 "checked_in": format_number(counts["checked_in"]),
                 "checkin_total": format_number(counts["total"]),
-                "recent_scans": ScanLog.objects.select_related("ticket", "staff_card", "scanned_by")[:8],
+                "recent_scans": ScanLog.objects.select_related("ticket", "staff_card", "scanned_by", "scanner_access")[:8],
             }
         }
     )

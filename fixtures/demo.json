@@ -4,12 +4,12 @@
     "pk": 1,
     "fields": {
       "site_name": "NextWave Party",
-      "meta_description": "NextWave Party — 1st Edition. The biggest Benin x Nigeria night of the year. Buy your ticket online in under a minute.",
-      "primary_color": "#0A3D91",
-      "accent_color": "#FF6B00",
+      "meta_description": "XMAS with Q-Dot — Dec 25 & 26, 2026 at J5 Lounge, Ilara (Ogun State). 1 ticket covers 2 days. Buy your ticket online.",
+      "primary_color": "#C8102E",
+      "accent_color": "#F5B921",
       "contact_email": "hello@nextwaveparty.com",
-      "contact_phone": "+229 01 97 00 00 00",
-      "whatsapp": "+2290197000000",
+      "contact_phone": "07070257650",
+      "whatsapp": "",
       "instagram": "https://instagram.com/nextwaveparty",
       "facebook": "",
       "tiktok": "https://tiktok.com/@nextwaveparty",
@@ -26,8 +26,8 @@
       "about_text_en": "NextWave Party is a new music night that brings Benin and Nigeria together on one stage: Afrobeats, Amapiano, Afro-house and the best of the West African club scene.\n\nFor this 1st edition, we gather rising artists, top DJs and dancers for a night built around one idea: the next wave of African music, live.\n\nOrganised by NextWave Events, Cotonou.",
       "about_text_fr": "NextWave Party est une nouvelle soirée musicale qui réunit le Bénin et le Nigeria sur une même scène : Afrobeats, Amapiano, Afro-house et le meilleur des clubs d'Afrique de l'Ouest.\n\nPour cette 1ère édition, nous rassemblons des artistes montants, les meilleurs DJs et des danseurs pour une nuit construite autour d'une idée : la nouvelle vague de la musique africaine, en live.\n\nOrganisé par NextWave Events, Cotonou.",
       "about_image": "demo/about.jpg",
-      "terms_en": "1. A ticket gives access to the event for one person, one entry only.\n2. Tickets are non-transferable and cannot be resold. Each QR code is checked once at the entrance.\n3. Tickets are not refundable, except if the event is cancelled by the organiser.\n4. Minimum age: 18. An ID may be requested at the entrance.\n5. The organiser may refuse entry to anyone who does not respect the safety rules.\n6. Weapons, drugs, glass bottles and professional cameras are forbidden.",
-      "terms_fr": "1. Un ticket donne accès à l'événement pour une personne, une seule entrée.\n2. Les tickets sont nominatifs et ne peuvent être revendus. Chaque QR code est contrôlé une seule fois à l'entrée.\n3. Les tickets ne sont pas remboursables, sauf annulation de l'événement par l'organisateur.\n4. Âge minimum : 18 ans. Une pièce d'identité peut être demandée à l'entrée.\n5. L'organisateur peut refuser l'entrée à toute personne ne respectant pas les règles de sécurité.\n6. Armes, drogues, bouteilles en verre et appareils photo professionnels sont interdits.",
+      "terms_en": "1. A ticket gives access to the event for one person, one entry per event day.\n2. Tickets are non-transferable and cannot be resold. Each QR code is checked once per event day at the entrance.\n3. Tickets are not refundable, except if the event is cancelled by the organiser.\n4. Minimum age: 18. An ID may be requested at the entrance.\n5. The organiser may refuse entry to anyone who does not respect the safety rules.\n6. Weapons, drugs, glass bottles and professional cameras are forbidden.",
+      "terms_fr": "1. Un ticket donne accès à l'événement pour une personne, une entrée par jour de l'événement.\n2. Les tickets sont nominatifs et ne peuvent être revendus. Chaque QR code est contrôlé une fois par jour à l'entrée.\n3. Les tickets ne sont pas remboursables, sauf annulation de l'événement par l'organisateur.\n4. Âge minimum : 18 ans. Une pièce d'identité peut être demandée à l'entrée.\n5. L'organisateur peut refuser l'entrée à toute personne ne respectant pas les règles de sécurité.\n6. Armes, drogues, bouteilles en verre et appareils photo professionnels sont interdits.",
       "privacy_en": "We collect your name, e-mail, phone number and (optionally) a photo only to issue your ticket, send it to you and check it at the entrance.\n\nPayments are processed by FedaPay, FeexPay, Paystack or Flutterwave: we never see or store your card details.\n\nYour data is never sold. It is deleted 12 months after the event. Contact us to access or delete your data.",
       "privacy_fr": "Nous collectons votre nom, votre e-mail, votre téléphone et (facultativement) une photo uniquement pour émettre votre ticket, vous l'envoyer et le contrôler à l'entrée.\n\nLes paiements sont traités par FedaPay, FeexPay, Paystack ou Flutterwave : nous ne voyons ni ne conservons jamais vos données de carte.\n\nVos données ne sont jamais vendues. Elles sont supprimées 12 mois après l'événement. Contactez-nous pour y accéder ou les supprimer."
     }
@@ -36,75 +36,1170 @@
     "model": "core.event",
     "pk": 1,
     "fields": {
-      "name": "NextWave Party",
-      "edition": "1st Edition",
-      "slug": "nextwave-party-2026",
-      "description_en": "One night, two countries, one wave. NextWave Party lands in Cotonou with Afrobeats, Amapiano and Afro-house from Benin and Nigeria. Live performances, DJ sets, dancers and surprise guests until late.",
-      "description_fr": "Une nuit, deux pays, une vague. NextWave Party débarque à Cotonou avec l'Afrobeats, l'Amapiano et l'Afro-house du Bénin et du Nigeria. Performances live, DJ sets, danseurs et invités surprises jusqu'au bout de la nuit.",
-      "practical_info_en": "Minimum age: 18 — bring an ID.\nForbidden: weapons, drugs, glass bottles, professional cameras.\nParking available on site. Doors close at midnight.",
-      "practical_info_fr": "Âge minimum : 18 ans — munissez-vous d'une pièce d'identité.\nInterdits : armes, drogues, bouteilles en verre, appareils photo professionnels.\nParking disponible sur place. Fermeture des portes à minuit.",
-      "date_start": "2026-12-27T19:00:00Z",
-      "doors_open": "2026-12-27T17:00:00Z",
-      "date_end": "2026-12-28T03:00:00Z",
-      "venue_name": "Palais des Congrès",
-      "venue_address": "Boulevard de la Marina",
-      "city": "Cotonou",
-      "country": "Benin",
-      "map_embed_url": "https://www.google.com/maps?q=Palais+des+Congr%C3%A8s+Cotonou&output=embed",
-      "map_link": "https://www.google.com/maps/search/?api=1&query=Palais+des+Congr%C3%A8s+Cotonou",
-      "hall_map_image": "demo/hall-map.png",
+      "name": "Xmas",
+      "edition": "With Q-Dot",
+      "slug": "xmas-with-q-dot-2026",
+      "description_en": "Two days of Christmas party with Q-Dot and more than thirty artists, DJs, dancers and hype men. Dec 25 and Dec 26, from 5 PM, at J5 Lounge. One ticket covers both days.",
+      "description_fr": "Deux jours de fête de Noël avec Q-Dot et plus de trente artistes, DJ, danseurs et animateurs. Les 25 et 26 décembre, dès 17 h, au J5 Lounge. Un seul ticket pour les deux jours.",
+      "practical_info_en": "One ticket covers Dec 25 and Dec 26: one entry per day.\nShow your QR code at the entrance (screen brightness up) or printed.\nOne RFID wristband per person.\nFor tables and enquiries: 07070257650, 09166119357, +2290190776888.",
+      "practical_info_fr": "Un ticket couvre le 25 et le 26 décembre : une entrée par jour.\nPrésentez votre QR code à l’entrée (luminosité au maximum) ou imprimé.\nUn bracelet RFID par personne.\nRéservations de tables et renseignements : 07070257650, 09166119357, +2290190776888.",
+      "date_start": "2026-12-25T16:00:00Z",
+      "doors_open": null,
+      "date_end": "2026-12-27T03:00:00Z",
+      "venue_name": "J5 Lounge",
+      "venue_address": "Imeko Rd, Ilara",
+      "city": "Ogun State",
+      "country": "Nigeria",
+      "map_embed_url": "https://www.google.com/maps?q=J5+Lounge+Imeko+Road+Ilara+Ogun+State&output=embed",
+      "map_link": "https://www.google.com/maps/search/?api=1&query=J5+Lounge+Imeko+Road+Ilara+Ogun+State",
+      "hall_map_image": "",
       "poster_image": "demo/poster.jpg",
       "video_file": "",
-      "video_url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
-      "video_poster": "demo/video-cover.jpg",
+      "video_url": "",
+      "video_poster": "",
       "is_active": true,
-      "created_at": "2026-11-01T10:00:00Z"
+      "created_at": "2026-11-01T10:00:00Z",
+      "presented_by": "Next Wave Africa & Vibe City Entertainment",
+      "tickets_note_en": "One RFID wristband per person, given at the entrance when your QR ticket is scanned.",
+      "tickets_note_fr": "Un bracelet RFID par personne, remis à l’entrée au scan de votre ticket QR.",
+      "days": 2,
+      "enquiry_phones": "07070257650, 09166119357, +2290190776888"
     }
   },
-  {"model": "core.heroslide", "pk": 1, "fields": {"event": 1, "image": "demo/hero-1.jpg", "title_en": "The next wave is here", "title_fr": "La nouvelle vague est là", "subtitle_en": "Benin x Nigeria — one night only", "subtitle_fr": "Bénin x Nigeria — une seule nuit", "order": 1, "is_active": true}},
-  {"model": "core.heroslide", "pk": 2, "fields": {"event": 1, "image": "demo/hero-2.jpg", "title_en": "10+ artists & DJs", "title_fr": "Plus de 10 artistes et DJs", "subtitle_en": "Afrobeats, Amapiano, Afro-house", "subtitle_fr": "Afrobeats, Amapiano, Afro-house", "order": 2, "is_active": true}},
-  {"model": "core.heroslide", "pk": 3, "fields": {"event": 1, "image": "demo/hero-3.jpg", "title_en": "VIP & VVIP lounges", "title_fr": "Espaces VIP et VVIP", "subtitle_en": "Front stage, tables, fast lane", "subtitle_fr": "Devant la scène, tables, entrée prioritaire", "order": 3, "is_active": true}},
-  {"model": "core.heroslide", "pk": 4, "fields": {"event": 1, "image": "demo/hero-4.jpg", "title_en": "Your ticket in 60 seconds", "title_fr": "Votre ticket en 60 secondes", "subtitle_en": "Mobile Money, card or bank transfer", "subtitle_fr": "Mobile Money, carte ou virement", "order": 4, "is_active": true}},
-
-  {"model": "core.physicaloutlet", "pk": 1, "fields": {"event": 1, "name": "NextWave Store — Cadjèhoun", "address": "Rue 12.034, near the Cadjèhoun crossroads", "city": "Cotonou", "country": "Benin", "phone": "+229 01 97 00 00 01", "opening_hours": "Mon–Sat · 10:00 AM – 8:00 PM", "map_link": "https://www.google.com/maps/search/?api=1&query=Cadjehoun+Cotonou", "order": 1, "is_active": true}},
-  {"model": "core.physicaloutlet", "pk": 2, "fields": {"event": 1, "name": "Erevan Mall — Info desk", "address": "Boulevard Steinmetz", "city": "Cotonou", "country": "Benin", "phone": "+229 01 97 00 00 02", "opening_hours": "Every day · 9:00 AM – 9:00 PM", "map_link": "https://www.google.com/maps/search/?api=1&query=Erevan+Cotonou", "order": 2, "is_active": true}},
-  {"model": "core.physicaloutlet", "pk": 3, "fields": {"event": 1, "name": "NextWave Lagos Desk", "address": "Admiralty Way, Lekki Phase 1", "city": "Lagos", "country": "Nigeria", "phone": "+234 803 000 0000", "opening_hours": "Mon–Fri · 10:00 AM – 6:00 PM", "map_link": "https://www.google.com/maps/search/?api=1&query=Admiralty+Way+Lekki", "order": 3, "is_active": true}},
-
-  {"model": "core.faq", "pk": 1, "fields": {"question_en": "Can I get a refund?", "question_fr": "Puis-je être remboursé ?", "answer_en": "Tickets are not refundable, except if the event is cancelled. In that case you are refunded automatically on your payment method.", "answer_fr": "Les tickets ne sont pas remboursables, sauf annulation de l'événement. Dans ce cas, vous êtes remboursé automatiquement sur votre moyen de paiement.", "order": 1, "is_active": true}},
-  {"model": "core.faq", "pk": 2, "fields": {"question_en": "What is the minimum age?", "question_fr": "Quel est l'âge minimum ?", "answer_en": "The event is 18+. Please bring an ID: it may be checked at the entrance.", "answer_fr": "L'événement est réservé aux 18 ans et plus. Munissez-vous d'une pièce d'identité : elle peut être contrôlée à l'entrée.", "order": 2, "is_active": true}},
-  {"model": "core.faq", "pk": 3, "fields": {"question_en": "What items are forbidden?", "question_fr": "Quels objets sont interdits ?", "answer_en": "Weapons, drugs, glass bottles, outside drinks and professional cameras are not allowed. Bags are searched at the entrance.", "answer_fr": "Armes, drogues, bouteilles en verre, boissons extérieures et appareils photo professionnels sont interdits. Les sacs sont fouillés à l'entrée.", "order": 3, "is_active": true}},
-  {"model": "core.faq", "pk": 4, "fields": {"question_en": "I lost my ticket. What do I do?", "question_fr": "J'ai perdu mon ticket. Que faire ?", "answer_en": "Go to “Find my ticket” at the bottom of the page, enter your e-mail and order reference (or phone number): we send your tickets again instantly.", "answer_fr": "Allez sur « Retrouver mon ticket » en bas de la page, saisissez votre e-mail et votre référence de commande (ou téléphone) : nous vous renvoyons vos tickets immédiatement.", "order": 4, "is_active": true}},
-  {"model": "core.faq", "pk": 5, "fields": {"question_en": "Can I pay from Nigeria?", "question_fr": "Puis-je payer depuis le Nigeria ?", "answer_en": "Yes. Choose “Nigeria” at checkout to pay in Naira with Paystack or Flutterwave (card, bank transfer, USSD).", "answer_fr": "Oui. Choisissez « Nigeria » lors de l'achat pour payer en Naira avec Paystack ou Flutterwave (carte, virement, USSD).", "order": 5, "is_active": true}},
-  {"model": "core.faq", "pk": 6, "fields": {"question_en": "Can someone else use my ticket?", "question_fr": "Quelqu'un d'autre peut-il utiliser mon ticket ?", "answer_en": "No. Tickets carry the holder's name and photo and each QR code works only once. If you buy several tickets, enter the name of each guest.", "answer_fr": "Non. Les tickets portent le nom et la photo du titulaire et chaque QR code ne fonctionne qu'une fois. Si vous achetez plusieurs tickets, saisissez le nom de chaque invité.", "order": 6, "is_active": true}},
-
-  {"model": "lineup.artistcategory", "pk": 1, "fields": {"name_en": "Artists", "name_fr": "Artistes", "slug": "artists", "order": 1}},
-  {"model": "lineup.artistcategory", "pk": 2, "fields": {"name_en": "DJs", "name_fr": "DJs", "slug": "djs", "order": 2}},
-  {"model": "lineup.artistcategory", "pk": 3, "fields": {"name_en": "Hosts / MC", "name_fr": "Animateurs / MC", "slug": "hosts", "order": 3}},
-  {"model": "lineup.artistcategory", "pk": 4, "fields": {"name_en": "Dancers", "name_fr": "Danseurs", "slug": "dancers", "order": 4}},
-  {"model": "lineup.artistcategory", "pk": 5, "fields": {"name_en": "Special Guests", "name_fr": "Invités spéciaux", "slug": "special-guests", "order": 5}},
-
-  {"model": "lineup.artist", "pk": 1, "fields": {"event": 1, "category": 1, "stage_name": "Ayo Marina", "photo": "demo/artist-1.jpg", "country_code": "NG", "role_en": "Afrobeats singer", "role_fr": "Chanteuse Afrobeats", "bio_en": "Lagos-born voice with a smooth Afrobeats sound, Ayo Marina headlines the first NextWave night.", "bio_fr": "Voix née à Lagos au son Afrobeats tout en douceur, Ayo Marina est la tête d'affiche de la première NextWave.", "is_headliner": true, "order": 1, "is_active": true, "instagram": "https://instagram.com/", "tiktok": "https://tiktok.com/", "x": "", "youtube": "https://youtube.com/"}},
-  {"model": "lineup.artist", "pk": 2, "fields": {"event": 1, "category": 1, "stage_name": "Kemi Sôgbé", "photo": "demo/artist-2.jpg", "country_code": "BJ", "role_en": "Afro-pop artist", "role_fr": "Artiste Afro-pop", "bio_en": "Mixing Fon lyrics with modern Afro-pop, Kemi Sôgbé is one of Cotonou's fastest rising voices.", "bio_fr": "Mêlant paroles en fon et Afro-pop moderne, Kemi Sôgbé est l'une des voix montantes de Cotonou.", "is_headliner": true, "order": 2, "is_active": true, "instagram": "https://instagram.com/", "tiktok": "", "x": "", "youtube": ""}},
-  {"model": "lineup.artist", "pk": 3, "fields": {"event": 1, "category": 1, "stage_name": "Tobi Lagoon", "photo": "demo/artist-3.jpg", "country_code": "NG", "role_en": "Rapper", "role_fr": "Rappeur", "bio_en": "Street poet from Surulere with punchlines in English and Pidgin.", "bio_fr": "Poète de rue de Surulere, punchlines en anglais et en pidgin.", "is_headliner": false, "order": 3, "is_active": true, "instagram": "https://instagram.com/", "tiktok": "", "x": "https://x.com/", "youtube": ""}},
-  {"model": "lineup.artist", "pk": 4, "fields": {"event": 1, "category": 1, "stage_name": "Sènan", "photo": "demo/artist-4.jpg", "country_code": "BJ", "role_en": "Singer-songwriter", "role_fr": "Auteur-compositeur", "bio_en": "Acoustic roots meet Afro-soul in Sènan's live sets.", "bio_fr": "Racines acoustiques et Afro-soul se rencontrent dans les lives de Sènan.", "is_headliner": false, "order": 4, "is_active": true, "instagram": "", "tiktok": "", "x": "", "youtube": "https://youtube.com/"}},
-  {"model": "lineup.artist", "pk": 5, "fields": {"event": 1, "category": 2, "stage_name": "DJ Wavy K", "photo": "demo/artist-5.jpg", "country_code": "NG", "role_en": "Amapiano DJ", "role_fr": "DJ Amapiano", "bio_en": "Resident DJ in Lagos clubs, known for long Amapiano journeys.", "bio_fr": "DJ résident des clubs de Lagos, connu pour ses longs voyages Amapiano.", "is_headliner": false, "order": 5, "is_active": true, "instagram": "https://instagram.com/", "tiktok": "https://tiktok.com/", "x": "", "youtube": ""}},
-  {"model": "lineup.artist", "pk": 6, "fields": {"event": 1, "category": 2, "stage_name": "DJ Hounkpè", "photo": "demo/artist-6.jpg", "country_code": "BJ", "role_en": "Afro-house DJ", "role_fr": "DJ Afro-house", "bio_en": "Cotonou's Afro-house selector, blending traditional percussion with deep grooves.", "bio_fr": "Le sélecteur Afro-house de Cotonou, entre percussions traditionnelles et grooves profonds.", "is_headliner": false, "order": 6, "is_active": true, "instagram": "https://instagram.com/", "tiktok": "", "x": "", "youtube": ""}},
-  {"model": "lineup.artist", "pk": 7, "fields": {"event": 1, "category": 2, "stage_name": "DJ Nala", "photo": "demo/artist-7.jpg", "country_code": "GH", "role_en": "Open format DJ", "role_fr": "DJ open format", "bio_en": "From Accra with love: Afrobeats, dancehall and throwbacks.", "bio_fr": "D'Accra avec amour : Afrobeats, dancehall et classiques.", "is_headliner": false, "order": 7, "is_active": true, "instagram": "https://instagram.com/", "tiktok": "", "x": "", "youtube": ""}},
-  {"model": "lineup.artist", "pk": 8, "fields": {"event": 1, "category": 3, "stage_name": "MC Fifamè", "photo": "demo/artist-8.jpg", "country_code": "BJ", "role_en": "Host", "role_fr": "Animatrice", "bio_en": "Radio host and the voice of the night, in English and French.", "bio_fr": "Animatrice radio et voix de la soirée, en anglais et en français.", "is_headliner": false, "order": 8, "is_active": true, "instagram": "https://instagram.com/", "tiktok": "", "x": "", "youtube": ""}},
-  {"model": "lineup.artist", "pk": 9, "fields": {"event": 1, "category": 4, "stage_name": "Wave Crew", "photo": "demo/artist-9.jpg", "country_code": "NG", "role_en": "Dance crew", "role_fr": "Troupe de danse", "bio_en": "Eight dancers, one wave: choreographies made for this night.", "bio_fr": "Huit danseurs, une vague : des chorégraphies créées pour cette nuit.", "is_headliner": false, "order": 9, "is_active": true, "instagram": "https://instagram.com/", "tiktok": "https://tiktok.com/", "x": "", "youtube": ""}},
-  {"model": "lineup.artist", "pk": 10, "fields": {"event": 1, "category": 5, "stage_name": "Surprise Guest", "photo": "demo/artist-10.jpg", "country_code": "NG", "role_en": "To be revealed", "role_fr": "À découvrir", "bio_en": "A very special guest will be announced on the night. Stay tuned!", "bio_fr": "Un invité très spécial sera annoncé le soir même. Restez connectés !", "is_headliner": false, "order": 10, "is_active": true, "instagram": "", "tiktok": "", "x": "", "youtube": ""}},
-
-  {"model": "tickets.tickettype", "pk": 1, "fields": {"event": 1, "name_en": "Regular", "name_fr": "Standard", "slug": "regular", "description_en": "General access to the main floor.", "description_fr": "Accès général à la salle principale.", "price_xof": 10000, "price_ngn": 25000, "capacity": 800, "sold": 0, "reserved": 0, "is_active": true, "sale_start": null, "sale_end": null, "order": 1, "color": "#0A3D91", "seat_image": "demo/seat-regular.png", "zone_label": "Zone C – Main floor"}},
-  {"model": "tickets.tickettype", "pk": 2, "fields": {"event": 1, "name_en": "VIP", "name_fr": "VIP", "slug": "vip", "description_en": "Closer to the stage with a dedicated bar.", "description_fr": "Plus près de la scène avec un bar dédié.", "price_xof": 25000, "price_ngn": 60000, "capacity": 300, "sold": 0, "reserved": 0, "is_active": true, "sale_start": null, "sale_end": null, "order": 2, "color": "#B45309", "seat_image": "demo/seat-vip.png", "zone_label": "Zone B – VIP lounge"}},
-  {"model": "tickets.tickettype", "pk": 3, "fields": {"event": 1, "name_en": "VVIP", "name_fr": "VVIP", "slug": "vvip", "description_en": "Front stage area with table service.", "description_fr": "Espace devant la scène avec service à table.", "price_xof": 50000, "price_ngn": 120000, "capacity": 100, "sold": 0, "reserved": 0, "is_active": true, "sale_start": null, "sale_end": null, "order": 3, "color": "#111827", "seat_image": "demo/seat-vvip.png", "zone_label": "Zone A – Front stage"}},
-
-  {"model": "tickets.ticketbenefit", "pk": 1, "fields": {"ticket_type": 1, "text_en": "Access to the main floor", "text_fr": "Accès à la salle principale", "order": 1}},
-  {"model": "tickets.ticketbenefit", "pk": 2, "fields": {"ticket_type": 1, "text_en": "All live shows & DJ sets", "text_fr": "Tous les concerts et DJ sets", "order": 2}},
-  {"model": "tickets.ticketbenefit", "pk": 3, "fields": {"ticket_type": 2, "text_en": "VIP lounge access", "text_fr": "Accès à l'espace VIP", "order": 1}},
-  {"model": "tickets.ticketbenefit", "pk": 4, "fields": {"ticket_type": 2, "text_en": "1 welcome drink", "text_fr": "1 boisson offerte", "order": 2}},
-  {"model": "tickets.ticketbenefit", "pk": 5, "fields": {"ticket_type": 2, "text_en": "Priority entrance", "text_fr": "Entrée prioritaire", "order": 3}},
-  {"model": "tickets.ticketbenefit", "pk": 6, "fields": {"ticket_type": 3, "text_en": "Front stage area", "text_fr": "Espace devant la scène", "order": 1}},
-  {"model": "tickets.ticketbenefit", "pk": 7, "fields": {"ticket_type": 3, "text_en": "Table service & 2 drinks", "text_fr": "Service à table et 2 boissons", "order": 2}},
-  {"model": "tickets.ticketbenefit", "pk": 8, "fields": {"ticket_type": 3, "text_en": "Fast lane entrance", "text_fr": "Entrée express", "order": 3}},
-  {"model": "tickets.ticketbenefit", "pk": 9, "fields": {"ticket_type": 3, "text_en": "Meet & greet with the artists", "text_fr": "Rencontre avec les artistes", "order": 4}}
+  {
+    "model": "lineup.artistcategory",
+    "pk": 1,
+    "fields": {
+      "name_en": "Headliner",
+      "name_fr": "Tête d’affiche",
+      "slug": "headliner",
+      "order": 1
+    }
+  },
+  {
+    "model": "lineup.artistcategory",
+    "pk": 2,
+    "fields": {
+      "name_en": "Wheels",
+      "name_fr": "Platines",
+      "slug": "wheels",
+      "order": 2
+    }
+  },
+  {
+    "model": "lineup.artistcategory",
+    "pk": 3,
+    "fields": {
+      "name_en": "Hype",
+      "name_fr": "Hype",
+      "slug": "hype",
+      "order": 3
+    }
+  },
+  {
+    "model": "lineup.artistcategory",
+    "pk": 4,
+    "fields": {
+      "name_en": "Anchor",
+      "name_fr": "Animateur",
+      "slug": "anchor",
+      "order": 4
+    }
+  },
+  {
+    "model": "lineup.artistcategory",
+    "pk": 5,
+    "fields": {
+      "name_en": "Performing",
+      "name_fr": "Sur scène",
+      "slug": "performing",
+      "order": 5
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 1,
+    "fields": {
+      "event": 1,
+      "category": 1,
+      "stage_name": "Q-Dot",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "Headliner",
+      "role_fr": "Tête d’affiche",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": true,
+      "order": 1,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 2,
+    "fields": {
+      "event": 1,
+      "category": 2,
+      "stage_name": "DJ Lion",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "DJ",
+      "role_fr": "DJ",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 2,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 3,
+    "fields": {
+      "event": 1,
+      "category": 2,
+      "stage_name": "DJ Khalifa",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "DJ",
+      "role_fr": "DJ",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 3,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 4,
+    "fields": {
+      "event": 1,
+      "category": 2,
+      "stage_name": "DJ 247",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "DJ",
+      "role_fr": "DJ",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 4,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 5,
+    "fields": {
+      "event": 1,
+      "category": 2,
+      "stage_name": "DJ Afema",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "DJ",
+      "role_fr": "DJ",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 5,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 6,
+    "fields": {
+      "event": 1,
+      "category": 3,
+      "stage_name": "Latest",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "Hype man",
+      "role_fr": "Animateur",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 6,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 7,
+    "fields": {
+      "event": 1,
+      "category": 3,
+      "stage_name": "Mickey Marley",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "Hype man",
+      "role_fr": "Animateur",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 7,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 8,
+    "fields": {
+      "event": 1,
+      "category": 3,
+      "stage_name": "Kogbagidi",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "Hype man",
+      "role_fr": "Animateur",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 8,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 9,
+    "fields": {
+      "event": 1,
+      "category": 4,
+      "stage_name": "Dee Baba",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "Anchor",
+      "role_fr": "Animateur principal",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 9,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 10,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Tmizzy",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 10,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 11,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Super D",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 11,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 12,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Ozkid",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 12,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 13,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Alapa DC",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 13,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 14,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Tee Fresh",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 14,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 15,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Jaycode",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 15,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 16,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Bluwhale",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 16,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 17,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Terry Chris",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 17,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 18,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Santos City",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 18,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 19,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "6ix01",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 19,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 20,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Chesco",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 20,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 21,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "YB Bility",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 21,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 22,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "D China",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 22,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 23,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Ogba Dancers",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 23,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 24,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Ketu Dancers",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 24,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 25,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Magician",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 25,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 26,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Drummer Boi",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 26,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 27,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Zigido",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 27,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 28,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Odubela",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 28,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 29,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Wahab Le’Danseur",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 29,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 30,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "MC Oluomo",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 30,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 31,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Rukky Baby",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 31,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 32,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Fiwasewa",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 32,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 33,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Je Danseur",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 33,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "lineup.artist",
+    "pk": 34,
+    "fields": {
+      "event": 1,
+      "category": 5,
+      "stage_name": "Naimovic Vibez",
+      "photo": "",
+      "country_code": "NG",
+      "role_en": "",
+      "role_fr": "",
+      "bio_en": "",
+      "bio_fr": "",
+      "is_headliner": false,
+      "order": 34,
+      "is_active": true,
+      "instagram": "",
+      "tiktok": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  {
+    "model": "tickets.tickettype",
+    "pk": 1,
+    "fields": {
+      "event": 1,
+      "name_en": "Regular",
+      "name_fr": "Regular",
+      "slug": "regular",
+      "description_en": "Entry on Dec 25 and Dec 26, from 5 PM.",
+      "description_fr": "Entrée le 25 et le 26 décembre, dès 17 h.",
+      "price_xof": 6500,
+      "price_ngn": 15000,
+      "capacity": 800,
+      "sold": 0,
+      "reserved": 0,
+      "is_active": true,
+      "sale_start": null,
+      "sale_end": null,
+      "order": 1,
+      "color": "#C8102E",
+      "seat_image": "",
+      "zone_label": ""
+    }
+  },
+  {
+    "model": "tickets.tickettype",
+    "pk": 2,
+    "fields": {
+      "event": 1,
+      "name_en": "VIP Table",
+      "name_fr": "Table VIP",
+      "slug": "vip-table",
+      "description_en": "A reserved VIP table for both days.",
+      "description_fr": "Une table VIP réservée pour les deux jours.",
+      "price_xof": 0,
+      "price_ngn": 500000,
+      "capacity": 30,
+      "sold": 0,
+      "reserved": 0,
+      "is_active": true,
+      "sale_start": null,
+      "sale_end": null,
+      "order": 2,
+      "color": "#111827",
+      "seat_image": "",
+      "zone_label": ""
+    }
+  },
+  {
+    "model": "tickets.tickettype",
+    "pk": 3,
+    "fields": {
+      "event": 1,
+      "name_en": "Economy",
+      "name_fr": "Economy",
+      "slug": "economy",
+      "description_en": "Economy table for both days.",
+      "description_fr": "Table Economy pour les deux jours.",
+      "price_xof": 0,
+      "price_ngn": 300000,
+      "capacity": 30,
+      "sold": 0,
+      "reserved": 0,
+      "is_active": true,
+      "sale_start": null,
+      "sale_end": null,
+      "order": 3,
+      "color": "#B45309",
+      "seat_image": "",
+      "zone_label": ""
+    }
+  },
+  {
+    "model": "tickets.ticketbenefit",
+    "pk": 1,
+    "fields": {
+      "ticket_type": 1,
+      "text_en": "Access both days (Dec 25 & 26)",
+      "text_fr": "Accès les deux jours (25 & 26 déc.)",
+      "order": 1
+    }
+  },
+  {
+    "model": "tickets.ticketbenefit",
+    "pk": 2,
+    "fields": {
+      "ticket_type": 1,
+      "text_en": "1 RFID wristband per person",
+      "text_fr": "1 bracelet RFID par personne",
+      "order": 2
+    }
+  },
+  {
+    "model": "tickets.ticketbenefit",
+    "pk": 3,
+    "fields": {
+      "ticket_type": 1,
+      "text_en": "Q-Dot and the full line-up",
+      "text_fr": "Q-Dot et tout le line-up",
+      "order": 3
+    }
+  },
+  {
+    "model": "tickets.ticketbenefit",
+    "pk": 4,
+    "fields": {
+      "ticket_type": 2,
+      "text_en": "Reserved VIP table",
+      "text_fr": "Table VIP réservée",
+      "order": 4
+    }
+  },
+  {
+    "model": "tickets.ticketbenefit",
+    "pk": 5,
+    "fields": {
+      "ticket_type": 2,
+      "text_en": "Access both days (Dec 25 & 26)",
+      "text_fr": "Accès les deux jours (25 & 26 déc.)",
+      "order": 5
+    }
+  },
+  {
+    "model": "tickets.ticketbenefit",
+    "pk": 6,
+    "fields": {
+      "ticket_type": 2,
+      "text_en": "1 RFID wristband per person",
+      "text_fr": "1 bracelet RFID par personne",
+      "order": 6
+    }
+  },
+  {
+    "model": "tickets.ticketbenefit",
+    "pk": 7,
+    "fields": {
+      "ticket_type": 3,
+      "text_en": "Reserved table",
+      "text_fr": "Table réservée",
+      "order": 7
+    }
+  },
+  {
+    "model": "tickets.ticketbenefit",
+    "pk": 8,
+    "fields": {
+      "ticket_type": 3,
+      "text_en": "Access both days (Dec 25 & 26)",
+      "text_fr": "Accès les deux jours (25 & 26 déc.)",
+      "order": 8
+    }
+  },
+  {
+    "model": "tickets.ticketbenefit",
+    "pk": 9,
+    "fields": {
+      "ticket_type": 3,
+      "text_en": "1 RFID wristband per person",
+      "text_fr": "1 bracelet RFID par personne",
+      "order": 9
+    }
+  },
+  {
+    "model": "core.faq",
+    "pk": 1,
+    "fields": {
+      "question_en": "Is one ticket valid for both days?",
+      "question_fr": "Un ticket est-il valable les deux jours ?",
+      "answer_en": "Yes. One ticket covers Dec 25 and Dec 26: it is scanned once each day. A second scan on the same day is refused.",
+      "answer_fr": "Oui. Un ticket couvre le 25 et le 26 décembre : il est scanné une fois par jour. Un deuxième scan le même jour est refusé.",
+      "order": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.faq",
+    "pk": 2,
+    "fields": {
+      "question_en": "How do I receive my ticket?",
+      "question_fr": "Comment je reçois mon ticket ?",
+      "answer_en": "As soon as the payment is confirmed, your ticket (with its QR code and number) downloads to your phone and is sent by e-mail.",
+      "answer_fr": "Dès que le paiement est confirmé, votre ticket (avec son QR code et son numéro) se télécharge sur votre téléphone et vous est envoyé par e-mail.",
+      "order": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.faq",
+    "pk": 3,
+    "fields": {
+      "question_en": "What is the RFID wristband?",
+      "question_fr": "C’est quoi le bracelet RFID ?",
+      "answer_en": "One RFID wristband per person, given at the entrance when your QR ticket is scanned.",
+      "answer_fr": "Un bracelet RFID par personne, remis à l’entrée au scan de votre ticket QR.",
+      "order": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.faq",
+    "pk": 4,
+    "fields": {
+      "question_en": "What time does it start?",
+      "question_fr": "À quelle heure ça commence ?",
+      "answer_en": "From 5 PM, on Dec 25 and on Dec 26.",
+      "answer_fr": "Dès 17 h, le 25 et le 26 décembre.",
+      "order": 4,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.faq",
+    "pk": 5,
+    "fields": {
+      "question_en": "Where is the party?",
+      "question_fr": "Où a lieu la fête ?",
+      "answer_en": "J5 Lounge, Imeko Rd, Ilara, Ogun State (Nigeria).",
+      "answer_fr": "J5 Lounge, Imeko Rd, Ilara, Ogun State (Nigeria).",
+      "order": 5,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.faq",
+    "pk": 6,
+    "fields": {
+      "question_en": "Can I pay in CFA francs?",
+      "question_fr": "Puis-je payer en francs CFA ?",
+      "answer_en": "Yes: Regular tickets are 6,500 CFA by Mobile Money from Benin, or ₦15,000 by card or transfer from Nigeria.",
+      "answer_fr": "Oui : le ticket Regular coûte 6 500 CFA par Mobile Money depuis le Bénin, ou 15 000 ₦ par carte ou virement depuis le Nigeria.",
+      "order": 6,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.faq",
+    "pk": 7,
+    "fields": {
+      "question_en": "How do I book a VIP or Economy table?",
+      "question_fr": "Comment réserver une table VIP ou Economy ?",
+      "answer_en": "Buy it online, or call us for reservations and enquiries: 07070257650, 09166119357, +2290190776888.",
+      "answer_fr": "Achetez-la en ligne, ou appelez-nous pour les réservations et renseignements : 07070257650, 09166119357, +2290190776888.",
+      "order": 7,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.faq",
+    "pk": 8,
+    "fields": {
+      "question_en": "I lost my ticket. What do I do?",
+      "question_fr": "J’ai perdu mon ticket. Que faire ?",
+      "answer_en": "Use “Find my ticket” with the e-mail used for the purchase: we send it again.",
+      "answer_fr": "Utilisez « Retrouver mon ticket » avec l’e-mail de l’achat : nous vous le renvoyons.",
+      "order": 8,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.physicaloutlet",
+    "pk": 1,
+    "fields": {
+      "event": 1,
+      "name": "",
+      "address": "",
+      "city": "Imeko",
+      "country": "Nigeria",
+      "phone": "",
+      "opening_hours": "",
+      "map_link": "https://www.google.com/maps/search/?api=1&query=Imeko+Ogun+State+Nigeria",
+      "order": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.physicaloutlet",
+    "pk": 2,
+    "fields": {
+      "event": 1,
+      "name": "",
+      "address": "",
+      "city": "Ilara",
+      "country": "Nigeria",
+      "phone": "",
+      "opening_hours": "",
+      "map_link": "https://www.google.com/maps/search/?api=1&query=Ilara+Ogun+State+Nigeria",
+      "order": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.physicaloutlet",
+    "pk": 3,
+    "fields": {
+      "event": 1,
+      "name": "",
+      "address": "",
+      "city": "Abeokuta",
+      "country": "Nigeria",
+      "phone": "",
+      "opening_hours": "",
+      "map_link": "https://www.google.com/maps/search/?api=1&query=Abeokuta+Ogun+State+Nigeria",
+      "order": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.physicaloutlet",
+    "pk": 4,
+    "fields": {
+      "event": 1,
+      "name": "",
+      "address": "",
+      "city": "Pobè",
+      "country": "Benin",
+      "phone": "",
+      "opening_hours": "",
+      "map_link": "https://www.google.com/maps/search/?api=1&query=Pobè+Plateau+Benin",
+      "order": 4,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.physicaloutlet",
+    "pk": 5,
+    "fields": {
+      "event": 1,
+      "name": "",
+      "address": "",
+      "city": "Kétou",
+      "country": "Benin",
+      "phone": "",
+      "opening_hours": "",
+      "map_link": "https://www.google.com/maps/search/?api=1&query=Kétou+Plateau+Benin",
+      "order": 5,
+      "is_active": true
+    }
+  }
 ]

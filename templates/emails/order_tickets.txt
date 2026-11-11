@@ -15,7 +15,7 @@
 {% endfor %}
 {% translate "View & download my tickets" %}: {{ access_url }}
 
-{% translate "At the entrance" %}: {% translate "Show the QR code on your phone (screen brightness up) or printed. Each QR code is valid for one entry only. Do not share it." %}
+{% translate "At the entrance" %}: {% if event.is_multi_day %}{% blocktranslate with days=event.dates_label %}Show the QR code on your phone (screen brightness up) or printed. Each QR code is valid for one entry per day ({{ days }}). Do not share it.{% endblocktranslate %}{% else %}{% translate "Show the QR code on your phone (screen brightness up) or printed. Each QR code is valid for one entry only. Do not share it." %}{% endif %}
 {% if practical_info %}
 {% translate "Practical information" %}:
 {{ practical_info }}

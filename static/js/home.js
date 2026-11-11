@@ -1,4 +1,4 @@
-/* Home page: countdown, lineup filter, artist modal, lightbox, currency toggle, teaser video. */
+/* Home page: countdown, artist modal, lightbox, currency toggle, teaser video. */
 (function () {
   "use strict";
 
@@ -42,19 +42,6 @@
       var interval = window.setInterval(function () { if (!tick()) window.clearInterval(interval); }, 1000);
     }
   }
-
-  // ---------- Lineup filter ----------
-  var tabs = $$("[data-lineup-tabs] [data-filter]");
-  var cards = $$("[data-lineup] .artist-card");
-  tabs.forEach(function (tab) {
-    tab.addEventListener("click", function () {
-      var filter = tab.getAttribute("data-filter");
-      tabs.forEach(function (t) { t.setAttribute("aria-selected", t === tab ? "true" : "false"); });
-      cards.forEach(function (card) {
-        card.classList.toggle("is-hidden", filter !== "all" && card.getAttribute("data-category") !== filter);
-      });
-    });
-  });
 
   // ---------- Dialogs ----------
   function openDialog(dialog) {
@@ -109,7 +96,10 @@
       ticketsSection.setAttribute("data-currency", currency);
       buttons.forEach(function (b) { b.setAttribute("aria-pressed", b === button ? "true" : "false"); });
       $$("[data-select]", ticketsSection).forEach(function (link) {
-        link.href = link.href.replace(/country=[A-Z]{2}/, "country=" + country);
+        // A ticket not sold in this currency keeps the other one.
+        var sold = +link.getAttribute(currency === "XOF" ? "data-xof" : "data-ngn") > 0;
+        var target = sold ? country : (country === "BJ" ? "NG" : "BJ");
+        link.href = link.href.replace(/country=[A-Z]{2}/, "country=" + target);
       });
       store("nwp-currency", currency);
     };

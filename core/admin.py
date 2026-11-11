@@ -14,7 +14,7 @@ from unfold.decorators import action
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 from unfold.widgets import UnfoldAdminImageSmallFieldWidget
 
-from .models import FAQ, Event, HeroSlide, PhysicalOutlet, SiteSettings
+from .models import FAQ, Event, EventVideo, HeroSlide, PhysicalOutlet, SiteSettings
 from .qrcodes import buy_page_url, buy_qr_png, buy_qr_svg
 
 
@@ -144,17 +144,29 @@ class HeroSlideInline(StackedInline):
     tab = True
 
 
+class EventVideoInline(StackedInline):
+    model = EventVideo
+    extra = 1
+    fields = ("url", ("title_en", "title_fr"), ("order", "is_active"))
+    tab = True
+
+
 @admin.register(Event)
 class EventAdmin(ModelAdmin):
-    list_display = ("__str__", "date_start", "venue_name", "city", "is_active")
+    list_display = ("__str__", "date_start", "days", "venue_name", "city", "is_active")
     list_filter = ("is_active",)
     prepopulated_fields = {"slug": ("name", "edition")}
-    inlines = [HeroSlideInline]
+    inlines = [EventVideoInline, HeroSlideInline]
     fieldsets = (
-        (None, {"fields": ("name", "edition", "slug", "is_active")}),
-        (_("Date & time"), {"fields": ("date_start", "doors_open", "date_end")}),
-        (_("Description"), {"fields": ("description_en", "description_fr", "practical_info_en", "practical_info_fr")}),
-        (_("Venue"), {"fields": ("venue_name", "venue_address", "city", "country", "map_embed_url", "map_link", "hall_map_image")}),
+        (None, {"fields": ("presented_by", "name", "edition", "slug", "is_active")}),
+        (_("Date & time"), {
+            "description": _("Each ticket gives one entry per day: with 2 days, it is valid once on the show date and once "
+                             "the next day. A night past midnight still counts for the evening it started (until 6 AM)."),
+            "fields": ("date_start", "days", "doors_open", "date_end"),
+        }),
+        (_("Description"), {"fields": ("description_en", "description_fr", "practical_info_en", "practical_info_fr",
+                                       "tickets_note_en", "tickets_note_fr")}),
+        (_("Venue"), {"fields": ("venue_name", "venue_address", "city", "country", "enquiry_phones", "map_embed_url", "map_link", "hall_map_image")}),
         (_("Poster & video"), {"fields": ("poster_image", "video_file", "video_url", "video_poster")}),
     )
 
@@ -171,9 +183,30 @@ class HeroSlideAdmin(ModelAdmin):
         return thumb(obj.image, 80)
 
 
+@admin.register(EventVideo)
+class EventVideoAdmin(ModelAdmin):
+    list_display = ("preview", "title_en", "url", "order", "is_active")
+    list_filter = ("event", "is_active")
+    list_editable = ("order", "is_active")
+    search_fields = ("title_en", "title_fr", "url")
+
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        event = Event.get_active()
+        if event:
+            initial.setdefault("event", event.pk)
+        return initial
+
+    @admin.display(description=_("Video"))
+    def preview(self, obj):
+        if not obj.thumbnail_url:
+            return "—"
+        return format_html('<img src="{}" alt="" style="width:96px;height:54px;object-fit:cover;border-radius:6px">', obj.thumbnail_url)
+
+
 @admin.register(PhysicalOutlet)
 class PhysicalOutletAdmin(ModelAdmin):
-    list_display = ("name", "city", "country", "phone", "opening_hours", "is_active")
+    list_display = ("city", "name", "country", "phone", "opening_hours", "is_active")
     list_filter = ("country", "city", "is_active")
     search_fields = ("name", "address", "city")
     ordering_field = "order"

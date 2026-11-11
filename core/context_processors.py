@@ -9,8 +9,8 @@ def site(request):
     if request.path.startswith("/" + settings.ADMIN_URL):
         return {}
     site_settings = SiteSettings.load()
-    primary = site_settings.primary_color or "#0A3D91"
-    accent = site_settings.accent_color or "#FF6B00"
+    primary = site_settings.primary_color or "#C8102E"
+    accent = site_settings.accent_color or "#F5B921"
     return {
         "site": site_settings,
         "active_event": Event.get_active(),

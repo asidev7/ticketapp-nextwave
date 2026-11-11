@@ -11,8 +11,8 @@
   <meta property="og:description" content="{{ site.meta_description }}">
   {% if active_event.poster_image %}<meta property="og:image" content="{{ SITE_URL }}{{ active_event.poster_image.url }}">{% endif %}
   {% if site.favicon %}<link rel="icon" href="{{ site.favicon.url }}">{% else %}<link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">{% endif %}
-  <link rel="preload" href="{% static 'fonts/unbounded-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="{% static 'fonts/outfit-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/anton-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/montserrat-latin-500.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
   <link rel="stylesheet" href="{% static 'css/theme.css' %}">
   <style>:root{--primary:{{ theme.primary }};--on-primary:{{ theme.on_primary }};--link:{{ theme.link }};--accent:{{ theme.accent }};--on-accent:{{ theme.on_accent }}}</style>
@@ -21,7 +21,6 @@
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main">{% translate "Skip to content" %}</a>
-  <div class="ambient" aria-hidden="true"><span></span><span></span><span></span></div>
 
   <header class="site-header" data-header>
     <div class="container header-bar">
@@ -42,12 +41,10 @@
     </div>
     <nav class="main-nav" id="site-nav" aria-label="{% translate 'Main menu' %}">
       <ul class="container">
-        <li><a href="{% url 'core:home' %}#top">{% translate "Home" %}</a></li>
-        <li><a href="{% url 'core:home' %}#lineup">{% translate "Lineup" %}</a></li>
-        <li><a href="{% url 'core:home' %}#tickets">{% translate "Tickets" %}</a></li>
-        <li><a href="{% url 'core:home' %}#venue">{% translate "Venue" %}</a></li>
-        <li><a href="{% url 'core:home' %}#about">{% translate "About" %}</a></li>
-        <li><a href="{% url 'core:home' %}#faq">{% translate "FAQ" %}</a></li>
+        <li><a href="{% url 'core:home' %}#tickets"><span class="nav-num">01</span>{% translate "Tickets" %}</a></li>
+        <li><a href="{% url 'core:home' %}#lineup"><span class="nav-num">02</span>{% translate "Lineup" %}</a></li>
+        <li><a href="{% url 'core:home' %}#venue"><span class="nav-num">03</span>{% translate "Practical info" %}</a></li>
+        <li><a href="{% url 'core:home' %}#faq"><span class="nav-num">04</span>{% translate "FAQ" %}</a></li>
         <li class="nav-mobile-only"><a href="{% url 'tickets:find' %}">{% translate "Find my ticket" %}</a></li>
       </ul>
     </nav>
@@ -64,17 +61,17 @@
   </main>
 
   <footer class="site-footer">
-    <div class="footer-glow" aria-hidden="true"></div>
     <div class="container footer-grid">
       <div>
         <a class="brand brand--footer" href="{% url 'core:home' %}" aria-label="{{ site.site_name }} — {% translate 'Home' %}">{% include "partials/logo.html" %}</a>
-        {% if active_event %}<p class="footer-event">{{ active_event.edition }} · {{ active_event.date_start|endate:"M j, Y" }}<br>{{ active_event.venue_name }}, {{ active_event.city }}</p>{% endif %}
+        {% if active_event %}<p class="footer-event"><strong>{{ active_event.name }} {{ active_event.edition }}</strong><br>{{ active_event.dates_label }} · {{ active_event.time_label }}<br>{{ active_event.venue_name }}, {{ active_event.city }}</p>{% endif %}
       </div>
       <div>
         <h2 class="footer-title">{% translate "Contact" %}</h2>
         <ul class="footer-list">
           {% if site.contact_email %}<li><a href="mailto:{{ site.contact_email }}">{% icon "mail" 18 %}{{ site.contact_email }}</a></li>{% endif %}
-          {% if site.contact_phone %}<li><a href="tel:{{ site.contact_phone|cut:' ' }}">{% icon "phone" 18 %}{{ site.contact_phone }}</a></li>{% endif %}
+          {% for shown, number in active_event.phone_list %}<li><a href="tel:{{ number }}">{% icon "phone" 18 %}{{ shown }}</a></li>{% empty %}
+          {% if site.contact_phone %}<li><a href="tel:{{ site.contact_phone|cut:' ' }}">{% icon "phone" 18 %}{{ site.contact_phone }}</a></li>{% endif %}{% endfor %}
           {% if site.whatsapp_link %}<li><a href="{{ site.whatsapp_link }}" rel="noopener" target="_blank">{% icon "whatsapp" 18 %}WhatsApp {{ site.whatsapp }}</a></li>{% endif %}
         </ul>
       </div>
@@ -107,7 +104,7 @@
     {% if active_event %}
       <div class="sticky-buy" role="region" aria-label="{% translate 'Buy Ticket' %}">
         {% with prices=active_event.min_prices %}
-          {% if prices.XOF %}<span class="sticky-buy__from">{% translate "From" %} <strong>{{ prices.XOF|money:"XOF" }}</strong></span>{% endif %}
+          {% if prices.NGN or prices.XOF %}<span class="sticky-buy__from">{% translate "From" %} <strong>{% if prices.NGN %}{{ prices.NGN|poster_price:"NGN" }}{% endif %}{% if prices.NGN and prices.XOF %} · {% endif %}{% if prices.XOF %}{{ prices.XOF|poster_price:"XOF" }}{% endif %}</strong></span>{% endif %}
         {% endwith %}
         <a class="btn btn-accent" href="{% url 'core:home' %}#tickets">{% icon "ticket" %}{% translate "Buy Ticket" %}</a>
       </div>

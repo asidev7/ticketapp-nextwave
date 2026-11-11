@@ -12,19 +12,22 @@ import logging
 import secrets
 from datetime import timedelta
 
+import uuid
+
 from django.conf import settings
 from django.db import transaction
-from django.db.models import F, Sum, Value
+from django.db.models import F, Max, Sum, Value
 from django.db.models.functions import Greatest
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from core.constants import BENIN, COUNTRY_CURRENCY
-from core.models import SiteSettings
+from core.models import Event, SiteSettings
 from core.storage import private_storage
 from core.tasks import dispatch
 
-from .models import Order, OrderItem, Ticket, TicketType
+from .models import Order, OrderItem, PrintBatch, Ticket, TicketType
+from .qr import build_qr_payload
 
 logger = logging.getLogger("tickets")
 
@@ -55,6 +58,17 @@ def generate_ticket_code() -> str:
         if not Ticket.objects.filter(code=code).exists():
             return code
     raise RuntimeError("Could not generate a unique ticket code")
+
+
+def next_serials(event, count: int) -> range:
+    """Reserve the next `count` serial numbers of an event.
+
+    Must run inside a transaction: the event row is locked until commit, so
+    two orders paid at the same moment never get the same numbers.
+    """
+    Event.objects.select_for_update().filter(pk=event.pk).first()
+    last = Ticket.objects.filter(order__event_id=event.pk).aggregate(n=Max("serial"))["n"] or 0
+    return range(last + 1, last + 1 + count)
 
 
 # --------------------------------------------------------------------------
@@ -225,14 +239,17 @@ def fulfil_order(order_id: int, *, transaction_id: str = "", payload=None, gatew
 
 def _create_tickets(order: Order) -> None:
     holders = order.holders or []
+    items = list(order.items.select_related("ticket_type"))
+    serials = iter(next_serials(order.event, sum(item.quantity for item in items)))
     index = 0
-    for item in order.items.select_related("ticket_type"):
+    for item in items:
         for _unit in range(item.quantity):
             holder = holders[index] if index < len(holders) else {}
             ticket = Ticket(
                 order=order,
                 ticket_type=item.ticket_type,
                 code=generate_ticket_code(),
+                serial=next(serials),
                 holder_name=(holder.get("name") or order.buyer_name)[:120],
             )
             if holder.get("photo"):
@@ -279,6 +296,66 @@ def issue_complimentary(
         TicketType.objects.filter(pk=ticket_type.pk).update(reserved=F("reserved") + quantity)
         order, _created = fulfil_order(order.pk, transaction_id="complimentary", note="Complimentary tickets")
     return order
+
+
+# --------------------------------------------------------------------------
+# Printed tickets (bulk)
+# --------------------------------------------------------------------------
+def _unique_codes(count: int) -> list[str]:
+    codes: set[str] = set()
+    while len(codes) < count:
+        wanted = {f"NWP-{_random(4)}-{_random(4)}" for _ in range(count - len(codes))}
+        codes |= wanted - set(Ticket.objects.filter(code__in=wanted).values_list("code", flat=True))
+    return list(codes)
+
+
+def create_print_batch(*, ticket_type, quantity: int, paper: str = PrintBatch.Paper.A4, per_page: int = 4,
+                       outlet=None, note: str = "", user=None) -> PrintBatch:
+    """Issue `quantity` bearer tickets for printing: each gets a signed QR code,
+    a code and the next serial numbers. They count as sold (stock) but bring no
+    online revenue; nothing is e-mailed. The print PDF is built afterwards."""
+    if not 1 <= quantity <= PrintBatch.MAX_QUANTITY:
+        raise StockError(_("Choose between 1 and %(max)s tickets.") % {"max": PrintBatch.MAX_QUANTITY})
+    with transaction.atomic():
+        ticket_type = TicketType.objects.select_for_update().select_related("event").get(pk=ticket_type.pk)
+        if ticket_type.available < quantity:
+            raise StockError(_("Only %(count)s ticket(s) left in this category.") % {"count": ticket_type.available})
+        event = ticket_type.event
+        now = timezone.now()
+        order = Order.objects.create(
+            reference=generate_order_reference(event.date_start.year),
+            event=event,
+            buyer_name=f"Print batch — {ticket_type.name_en}"[:120],
+            buyer_email=(getattr(user, "email", "") or "").lower(),
+            country=BENIN,
+            currency=COUNTRY_CURRENCY[BENIN],
+            status=Order.Status.PAID,
+            stock_state=Order.StockState.SOLD,
+            paid_at=now,
+            note=note,
+        )
+        OrderItem.objects.create(order=order, ticket_type=ticket_type, quantity=quantity, unit_price=0)
+        TicketType.objects.filter(pk=ticket_type.pk).update(sold=F("sold") + quantity)
+
+        serials = next_serials(event, quantity)
+        tickets = []
+        for serial, code in zip(serials, _unique_codes(quantity)):
+            ticket_uuid = uuid.uuid4()
+            tickets.append(Ticket(
+                order=order, ticket_type=ticket_type, uuid=ticket_uuid, code=code, serial=serial,
+                qr_token=build_qr_payload(ticket_uuid),
+            ))
+        Ticket.objects.bulk_create(tickets)
+
+        batch = PrintBatch.objects.create(
+            event=event, ticket_type=ticket_type, quantity=quantity, outlet=outlet, note=note,
+            paper=paper, per_page=per_page, order=order, first_serial=serials[0], last_serial=serials[-1], created_by=user,
+        )
+        from .tasks import build_print_batch
+
+        transaction.on_commit(lambda: dispatch(build_print_batch, batch.pk))
+    logger.info("Print batch %s: %s × %s (%s)", batch.pk, quantity, ticket_type, batch.serial_range)
+    return batch
 
 
 # --------------------------------------------------------------------------

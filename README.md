@@ -1,8 +1,10 @@
 # ticketapp-nextwave
 
-Billetterie en ligne de **NextWave Party — 1st Edition** (Bénin 🇧🇯 / Nigeria 🇳🇬) :
-vente de tickets en XOF ou en NGN, ticket avec QR code signé (affiché, téléchargé et envoyé par e-mail),
-application web de scan à l'entrée et panneau d'administration complet.
+Billetterie en ligne de **NextWave** — événement actuel : **XMAS with Q-Dot**, 25 & 26 déc. 2026, J5 Lounge (Ilara, Ogun State)
+(Bénin 🇧🇯 / Nigeria 🇳🇬) : vente de tickets en XOF ou en NGN, ticket avec QR code signé et numéro (affiché, téléchargé
+et envoyé par e-mail), **1 ticket = 1 entrée par jour de l'événement**, impression des tickets en lot, application de scan
+installable (PWA) et panneau d'administration complet. Le site reprend le style de l'affiche (rouge, flocons, or ;
+polices Anton et Montserrat, auto-hébergées).
 
 - **Backend** : Python 3.12, Django 5.2, PostgreSQL (SQLite en développement)
 - **Admin** : django-unfold
@@ -15,12 +17,12 @@ application web de scan à l'entrée et panneau d'administration complet.
 
 | Page | Rôle |
 |---|---|
-| `/` | Page unique : carrousel, compte à rebours, vidéo, lineup par catégorie, tickets (avantages + place dans la salle), lieu, points de vente, À propos, FAQ |
-| `/checkout/<type>/` | Achat en 3 étapes : pays/devise → infos + photo du titulaire → moyen de paiement |
+| `/` | Page unique : l'affiche (titre, prix, dates, compte à rebours, affiche officielle), 3 fiches (lieu, dates, billetterie), « Choisis ton pass » + note bracelet RFID, « Du clic à l'entrée », line-up (têtes d'affiche + liste par catégorie) et vidéos YouTube, infos pratiques (numéros de réservation, plan, points de vente par ville), FAQ |
+| `/checkout/<type>/` | Achat sur une seule carte : devise (seulement celles où le ticket est vendu) → nombre de tickets → coordonnées → paiement |
 | `/order/<ref>/` | Succès (téléchargement automatique), attente (vérification toutes les 3 s) ou échec |
 | `/find-ticket/` | Renvoi des tickets par e-mail (limité à 5 essais/heure) |
 | `/buy/` | Lien court vers la section tickets (cible du QR code d'affiche) |
-| `/scan/` | Scanner PWA pour l'entrée (comptes du groupe **Scanner** ou staff) |
+| `/scan/` | Scanner de l'entrée, installable comme application (Android : bouton « Installer » ; iPhone : Safari → Partager → Sur l'écran d'accueil). Connexion avec **identifiant + code d'accès** donnés par l'admin (6 scanners actifs au maximum), ou compte staff |
 | `/nwp-admin/` | Administration (URL modifiable avec `ADMIN_URL`) |
 
 Sécurité : le ticket n'est émis qu'après vérification **côté serveur** du paiement (webhook signé et/ou API de vérification,
@@ -53,7 +55,7 @@ pip install -r requirements.txt
 cp .env.example .env            # puis ajustez si besoin (SQLite et e-mails en console par défaut)
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py seed_demo      # contenu de démo (événement, artistes, tickets, FAQ)
+python manage.py seed_demo      # contenu de l'affiche (XMAS with Q-Dot, artistes, tickets, FAQ, villes) + affiche officielle
 python manage.py runserver
 ```
 
@@ -138,11 +140,22 @@ Services systemd fournis dans `deploy/` : `nextwave-gunicorn.service`, `nextwave
 - **Réglages du site** : couleurs, contacts, ventes ouvertes/fermées, photo obligatoire, frais, textes légaux,
   et **QR code de la page d'achat** (PNG/SVG pour les affiches).
 - **Événement / Diaporama / Artistes / Types de tickets / Points de vente / FAQ** : tout le contenu EN/FR.
-- **Design des tickets** (par type) : importez votre visuel paysage 2400 × 900 px (billet 200 × 75 mm avec talon) ;
-  le système y ajoute le QR code, le code du ticket et le titulaire (position et taille réglables, aperçu en direct).
-  Sans visuel, un billet est dessiné automatiquement. Le PDF est au format billet, pas A4.
+- **Événement** : *nombre de jours* (2 = valable le 25 et le 26), ligne « présenté par », numéros de réservation,
+  note sous les tickets (ex. bracelet RFID), vidéos YouTube (liste de liens, onglet de l'événement ou menu *Vidéos YouTube*).
+  Une soirée qui dépasse minuit compte pour le jour où elle a commencé (jusqu'à 6 h).
+- **Design des tickets** (par type) : importez **un exemplaire de votre design** (ex. 2400 × 900 px, proportions conservées) ;
+  le système ajoute sur chaque ticket le QR code, le code et le **numéro** (N° 00042, qui se suit dans l'événement),
+  et le titulaire pour les tickets en ligne (position et taille réglables, aperçu en direct). Sans visuel, un billet
+  au style de l'affiche est dessiné (cases JOUR 1 / JOUR 2 sur le talon). Le PDF est au format billet.
+- **Impression en lot** : type de ticket + quantité (1 à 1 000) + format **A4 avec 4 ou 5 tickets par page** (ou taille
+  ticket, 1 par page) → le système crée les tickets (QR, code, numéros qui se suivent, valables chaque jour) puis le PDF
+  avec traits de coupe. Ils comptent dans le stock, sans recette en ligne ni e-mail. Changer le format et enregistrer
+  régénère le PDF. Dans *Tickets*, l'action « Imprimer les tickets sélectionnés » fait un PDF A4 d'une sélection.
+- **Accès scanner** : nom, identifiant (ex. `scan1`), code généré, date de fin facultative ; la fiche donne le lien de la
+  page de scan, l'identifiant, le code et un bouton « Envoyer par WhatsApp ». Décocher *actif* ou « Nouveau code »
+  déconnecte le téléphone au scan suivant. *Entrées* liste chaque entrée (jour, heure, scanner).
 - **Cartes staff** : nom, prénom, fonction (Staff, Sécurité, Organisation, Artiste, Presse, Bénévole, Technique),
-  photo, format carte de membre 85,6 × 54 mm (PNG/PDF, export groupé). Leur QR est accepté par le scanner
+  photo, format carte de membre 85,6 × 54 mm au style de l'affiche (PNG/PDF, export groupé). Leur QR est accepté par le scanner
   (« STAFF ✓ », passages illimités) tant que la carte est active.
 - **Commandes** : filtres, recherche, renvoi des tickets, *marquer payée*, annulation, export CSV/Excel.
 - **Invitations** : tickets gratuits (invités, presse, artistes) envoyés par e-mail.

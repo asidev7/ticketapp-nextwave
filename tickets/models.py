@@ -31,15 +31,16 @@ class TicketType(TranslatedMixin, models.Model):
     sale_start = models.DateTimeField(_("sale starts"), null=True, blank=True)
     sale_end = models.DateTimeField(_("sale ends"), null=True, blank=True)
     order = models.PositiveIntegerField(_("position"), default=0)
-    color = models.CharField(_("badge colour"), max_length=7, default="#0A3D91", validators=[hex_color_validator])
+    color = models.CharField(_("badge colour"), max_length=7, default="#C8102E", validators=[hex_color_validator])
     seat_image = models.ImageField(_("spot / zone image"), upload_to="tickets/seats/", blank=True)
     zone_label = models.CharField(_("zone label"), max_length=100, blank=True, help_text=_("e.g. Zone A – Front stage"))
 
     # Ticket design: your own artwork; the system adds the QR code, ticket code and holder.
     design_image = models.ImageField(
         _("ticket design"), upload_to="tickets/designs/", blank=True,
-        help_text=_("Landscape ticket artwork, 2400 × 900 px (8:3). Keep the right part (stub) free for the QR code. "
-                    "Empty = automatic design."),
+        help_text=_("Your own ticket artwork (one per ticket type), e.g. 2400 × 900 px. It keeps its proportions. "
+                    "Leave a free area for the QR code: the system adds the QR code, the ticket code and the number. "
+                    "Empty = automatic design in the poster style."),
     )
     qr_x = models.PositiveSmallIntegerField(
         _("QR position — horizontal (%)"), default=85, validators=[MinValueValidator(0), MaxValueValidator(100)],
@@ -50,7 +51,8 @@ class TicketType(TranslatedMixin, models.Model):
         help_text=_("Centre of the QR code from the top edge: 0 = top, 100 = bottom."),
     )
     qr_size = models.PositiveSmallIntegerField(
-        _("QR size (% of the height)"), default=56, validators=[MinValueValidator(25), MaxValueValidator(85)],
+        _("QR size (% of the height)"), default=56, validators=[MinValueValidator(15), MaxValueValidator(85)],
+        help_text=_("Of the shorter side of the design."),
     )
     holder_overlay = models.CharField(
         _("holder name & photo"), max_length=12, default="bottom_left",
@@ -220,7 +222,11 @@ class Ticket(models.Model):
     ticket_type = models.ForeignKey(TicketType, on_delete=models.PROTECT, related_name="tickets", verbose_name=_("ticket type"))
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     code = models.CharField(_("code"), max_length=20, unique=True, editable=False)
-    holder_name = models.CharField(_("holder name"), max_length=120)
+    serial = models.PositiveIntegerField(
+        _("serial number"), null=True, blank=True, editable=False, db_index=True,
+        help_text=_("Sequential number within the event, printed on the ticket."),
+    )
+    holder_name = models.CharField(_("holder name"), max_length=120, blank=True)
     holder_photo = models.ImageField(_("holder photo"), storage=private_storage, upload_to="holders/", blank=True)
     qr_token = models.CharField(_("QR content"), max_length=80, editable=False)
     qr_image = models.FileField(storage=private_storage, upload_to="tickets/qr/", blank=True, editable=False)
@@ -253,3 +259,65 @@ class Ticket(models.Model):
     def initials(self) -> str:
         parts = [p for p in (self.holder_name or "").split() if p]
         return "".join(p[0] for p in parts[:2]).upper() or "NW"
+
+    @property
+    def serial_label(self) -> str:
+        """'00042' — always five digits so printed numbers line up."""
+        return f"{self.serial:05d}" if self.serial else ""
+
+
+class PrintBatch(models.Model):
+    """Tickets printed in bulk for physical sale (outlets, door): each one has
+    its own signed QR code, code and serial number, like an online ticket."""
+
+    class Status(models.TextChoices):
+        GENERATING = "generating", _("Generating")
+        READY = "ready", _("Ready")
+        FAILED = "failed", _("Failed")
+
+    class Paper(models.TextChoices):
+        A4 = "a4", _("A4 sheets (several tickets per page, crop marks)")
+        TICKET = "ticket", _("Ticket size (one ticket per page)")
+
+    MAX_QUANTITY = 1000
+    PER_PAGE_CHOICES = [(n, str(n)) for n in (2, 3, 4, 5, 6)]
+
+    event = models.ForeignKey(Event, on_delete=models.PROTECT, related_name="print_batches", verbose_name=_("event"))
+    ticket_type = models.ForeignKey(TicketType, on_delete=models.PROTECT, related_name="print_batches", verbose_name=_("ticket type"))
+    quantity = models.PositiveIntegerField(
+        _("number of tickets"), validators=[MinValueValidator(1), MaxValueValidator(MAX_QUANTITY)],
+    )
+    outlet = models.ForeignKey(
+        "core.PhysicalOutlet", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="print_batches", verbose_name=_("sold at"),
+    )
+    note = models.CharField(_("note"), max_length=200, blank=True)
+    paper = models.CharField(_("paper format"), max_length=8, choices=Paper.choices, default=Paper.A4)
+    per_page = models.PositiveSmallIntegerField(
+        _("tickets per A4 page"), choices=PER_PAGE_CHOICES, default=4,
+        help_text=_("4 or 5 for long tickets; the tickets are as large as the page allows."),
+    )
+    order = models.OneToOneField(Order, on_delete=models.PROTECT, null=True, editable=False, related_name="print_batch", verbose_name=_("order"))
+    first_serial = models.PositiveIntegerField(_("first number"), null=True, editable=False)
+    last_serial = models.PositiveIntegerField(_("last number"), null=True, editable=False)
+    status = models.CharField(_("status"), max_length=12, choices=Status.choices, default=Status.GENERATING, editable=False)
+    pdf = models.FileField(storage=private_storage, upload_to="tickets/batches/", blank=True, editable=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, editable=False,
+        related_name="+", verbose_name=_("created by"),
+    )
+    created_at = models.DateTimeField(_("created"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("print batch")
+        verbose_name_plural = _("print batches")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.ticket_type} × {self.quantity} ({self.serial_range})"
+
+    @property
+    def serial_range(self) -> str:
+        if not self.first_serial:
+            return "—"
+        return f"{self.first_serial:05d} → {self.last_serial:05d}"

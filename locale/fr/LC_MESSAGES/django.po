@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NextWave Party 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-08 01:57+0100\n"
+"POT-Creation-Date: 2026-11-11 16:09+0100\n"
 "PO-Revision-Date: 2026-11-07 23:00+0100\n"
 "Last-Translator: NextWave Party\n"
 "Language-Team: French\n"
@@ -30,8 +30,9 @@ msgstr "Tableau de bord"
 msgid "Orders"
 msgstr "Commandes"
 
-#: config/settings/base.py:300 templates/base.html:47
-#: templates/core/home.html:180 tickets/admin.py:347
+#: config/settings/base.py:300 templates/base.html:44
+#: templates/core/home.html:82 templates/core/home.html:95
+#: tickets/admin.py:353
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -40,99 +41,116 @@ msgid "Complimentary tickets"
 msgstr "Invitations"
 
 #: config/settings/base.py:302
-msgid "Scan logs"
-msgstr "Journal des scans"
+msgid "Print batches"
+msgstr "Impression en lot"
 
 #: config/settings/base.py:303
 msgid "Staff cards"
 msgstr "Cartes staff"
 
-#: config/settings/base.py:307
+#: config/settings/base.py:307 templates/scanner/login.html:20
+#: tickets/admin.py:436
+msgid "Entrance"
+msgstr "Entrée"
+
+#: config/settings/base.py:310
+msgid "Scanner accesses"
+msgstr "Accès scanner"
+
+#: config/settings/base.py:311 tickets/admin.py:448
+msgid "Entries"
+msgstr "Entrées"
+
+#: config/settings/base.py:312
+msgid "Scan logs"
+msgstr "Journal des scans"
+
+#: config/settings/base.py:316
 msgid "Event content"
 msgstr "Contenu de l'événement"
 
-#: config/settings/base.py:310
+#: config/settings/base.py:319
 msgid "Event"
 msgstr "Événement"
 
-#: config/settings/base.py:311
-msgid "Hero slides"
-msgstr "Diaporama d'accueil"
+#: config/settings/base.py:320 core/models.py:324
+msgid "YouTube videos"
+msgstr "Vidéos YouTube"
 
-#: config/settings/base.py:312
+#: config/settings/base.py:321
 msgid "Artists"
 msgstr "Artistes"
 
-#: config/settings/base.py:313
+#: config/settings/base.py:322
 msgid "Artist categories"
 msgstr "Catégories d'artistes"
 
-#: config/settings/base.py:314
+#: config/settings/base.py:323
 msgid "Ticket types"
 msgstr "Catégories de tickets"
 
-#: config/settings/base.py:315
+#: config/settings/base.py:324
 msgid "Physical outlets"
 msgstr "Points de vente"
 
-#: config/settings/base.py:316 core/models.py:252 core/models.py:253
-#: templates/base.html:50 templates/core/home.html:290
+#: config/settings/base.py:325 core/models.py:379 core/models.py:380
+#: templates/base.html:47 templates/core/home.html:299
 msgid "FAQ"
 msgstr "FAQ"
 
-#: config/settings/base.py:320
+#: config/settings/base.py:329
 msgid "Configuration"
 msgstr "Configuration"
 
-#: config/settings/base.py:323 core/models.py:87
+#: config/settings/base.py:332 core/models.py:115
 msgid "Site settings"
 msgstr "Réglages du site"
 
-#: config/settings/base.py:324 templates/admin/index.html:43
+#: config/settings/base.py:333 templates/admin/index.html:43
 msgid "Payment gateways"
 msgstr "Passerelles de paiement"
 
-#: config/settings/base.py:325
+#: config/settings/base.py:334
 msgid "Gateway logs"
 msgstr "Journal des passerelles"
 
-#: config/settings/base.py:326
+#: config/settings/base.py:335
 msgid "Users"
 msgstr "Utilisateurs"
 
-#: config/settings/base.py:327
+#: config/settings/base.py:336
 msgid "Groups"
 msgstr "Groupes"
 
-#: core/admin.py:59
+#: core/admin.py:79
 msgid "Branding"
 msgstr "Identité visuelle"
 
-#: core/admin.py:60
+#: core/admin.py:80
 msgid "Contacts & social"
 msgstr "Contacts et réseaux sociaux"
 
-#: core/admin.py:61
+#: core/admin.py:81
 msgid "Ticket sales"
 msgstr "Vente de tickets"
 
-#: core/admin.py:62 templates/base.html:49 templates/core/home.html:278
+#: core/admin.py:82
 msgid "About"
 msgstr "À propos"
 
-#: core/admin.py:63
+#: core/admin.py:83
 msgid "Legal pages"
 msgstr "Pages légales"
 
-#: core/admin.py:64
+#: core/admin.py:84
 msgid "QR code — Buy Ticket page"
 msgstr "QR code — Page d'achat des tickets"
 
-#: core/admin.py:69 tickets/admin.py:430
+#: core/admin.py:89 tickets/admin.py:471
 msgid "QR code"
 msgstr "QR code"
 
-#: core/admin.py:79
+#: core/admin.py:99
 msgid ""
 "SITE_URL points to a local address: set the real domain in .env before "
 "printing this QR code."
@@ -140,11 +158,11 @@ msgstr ""
 "SITE_URL pointe vers une adresse locale : indiquez le vrai domaine dans .env"
 " avant d'imprimer ce QR code."
 
-#: core/admin.py:88
+#: core/admin.py:108
 msgid "Opens:"
 msgstr "Ouvre :"
 
-#: core/admin.py:89
+#: core/admin.py:109
 msgid ""
 "Print it on posters and flyers: scanning it opens the ticket section of the "
 "website."
@@ -152,53 +170,67 @@ msgstr ""
 "À imprimer sur les affiches et flyers : en le scannant, on arrive "
 "directement sur la section tickets du site."
 
-#: core/admin.py:90
+#: core/admin.py:110
 msgid "Download PNG (print, 1200 px)"
 msgstr "Télécharger en PNG (impression, 1200 px)"
 
-#: core/admin.py:91
+#: core/admin.py:111
 msgid "Download SVG (vector)"
 msgstr "Télécharger en SVG (vectoriel)"
 
-#: core/admin.py:94
+#: core/admin.py:114
 msgid "Buy Ticket QR (PNG)"
 msgstr "QR achat de tickets (PNG)"
 
-#: core/admin.py:100
+#: core/admin.py:120
 msgid "Buy Ticket QR (SVG)"
 msgstr "QR achat de tickets (SVG)"
 
-#: core/admin.py:135
+#: core/admin.py:162
 msgid "Date & time"
 msgstr "Date et heure"
 
-#: core/admin.py:136 tickets/admin.py:78
+#: core/admin.py:163
+msgid ""
+"Each ticket gives one entry per day: with 2 days, it is valid once on the "
+"show date and once the next day. A night past midnight still counts for the "
+"evening it started (until 6 AM)."
+msgstr ""
+"Chaque ticket donne une entrée par jour : avec 2 jours, il est valable une "
+"fois le jour du spectacle et une fois le lendemain. Une soirée qui dépasse "
+"minuit compte pour le jour où elle a commencé (jusqu'à 6 h)."
+
+#: core/admin.py:167 tickets/admin.py:83
 msgid "Description"
 msgstr "Description"
 
-#: core/admin.py:137 templates/base.html:48 templates/core/home.html:75
-#: templates/core/home.html:240 templates/emails/order_tickets.html:27
+#: core/admin.py:169 templates/core/home.html:70
+#: templates/emails/order_tickets.html:27
 #: templates/emails/order_tickets.txt:10
 msgid "Venue"
 msgstr "Lieu"
 
-#: core/admin.py:138
+#: core/admin.py:170
 msgid "Poster & video"
 msgstr "Affiche et vidéo"
 
-#: core/admin.py:149 templates/core/home.html:308
+#: core/admin.py:181 templates/core/home.html:327
 msgid "Image"
 msgstr "Image"
+
+#: core/admin.py:200
+msgid "Video"
+msgstr "Vidéo"
 
 #: core/apps.py:8
 msgid "Event & site"
 msgstr "Événement et site"
 
-#: core/constants.py:7 templates/tickets/checkout.html:45
+#: core/constants.py:7
 msgid "Benin"
 msgstr "Bénin"
 
-#: core/constants.py:8 templates/tickets/checkout.html:49
+#: core/constants.py:8
 msgid "Nigeria"
 msgstr "Nigeria"
 
@@ -206,42 +238,42 @@ msgstr "Nigeria"
 msgid "Use a hex colour such as #0A3D91."
 msgstr "Utilisez une couleur hexadécimale, par ex. #0A3D91."
 
-#: core/models.py:33
+#: core/models.py:61
 msgid "site name"
 msgstr "nom du site"
 
-#: core/models.py:34 payments/models.py:26
+#: core/models.py:62 payments/models.py:26
 msgid "logo"
 msgstr "logo"
 
-#: core/models.py:35
+#: core/models.py:63
 msgid "favicon"
 msgstr "favicon"
 
-#: core/models.py:35
+#: core/models.py:63
 msgid "Square PNG, 512×512."
 msgstr "PNG carré, 512×512."
 
-#: core/models.py:36
+#: core/models.py:64
 msgid "meta description"
 msgstr "méta-description"
 
-#: core/models.py:39
+#: core/models.py:67
 msgid "primary colour"
 msgstr "couleur principale"
 
-#: core/models.py:40
+#: core/models.py:68
 msgid ""
 "Buttons and links. Keep it dark enough to read on white (contrast 4.5:1)."
 msgstr ""
 "Boutons et liens. Gardez-la assez foncée pour être lisible sur blanc "
 "(contraste 4,5:1)."
 
-#: core/models.py:43
+#: core/models.py:71
 msgid "accent colour"
 msgstr "couleur d'accent"
 
-#: core/models.py:44
+#: core/models.py:72
 msgid ""
 "Badges and highlights. Text on it is automatically black or white for "
 "contrast."
@@ -249,309 +281,385 @@ msgstr ""
 "Badges et mises en avant. Le texte posé dessus passe automatiquement en noir"
 " ou blanc pour le contraste."
 
-#: core/models.py:47
+#: core/models.py:75
 msgid "contact e-mail"
 msgstr "e-mail de contact"
 
-#: core/models.py:48
+#: core/models.py:76
 msgid "contact phone"
 msgstr "téléphone de contact"
 
-#: core/models.py:49
+#: core/models.py:77
 msgid "WhatsApp number"
 msgstr "numéro WhatsApp"
 
-#: core/models.py:49
+#: core/models.py:77
 msgid "International format, e.g. +22997000000."
 msgstr "Format international, par ex. +22997000000."
 
-#: core/models.py:50 lineup/models.py:36
+#: core/models.py:78 lineup/models.py:36
 msgid "Instagram"
 msgstr "Instagram"
 
-#: core/models.py:51
+#: core/models.py:79
 msgid "Facebook"
 msgstr "Facebook"
 
-#: core/models.py:52 lineup/models.py:37
+#: core/models.py:80 lineup/models.py:37
 msgid "TikTok"
 msgstr "TikTok"
 
-#: core/models.py:53 lineup/models.py:38
+#: core/models.py:81 lineup/models.py:38
 msgid "X (Twitter)"
 msgstr "X (Twitter)"
 
-#: core/models.py:54 lineup/models.py:39
+#: core/models.py:82 lineup/models.py:39
 msgid "YouTube"
 msgstr "YouTube"
 
-#: core/models.py:56
+#: core/models.py:84
 msgid "sales open"
 msgstr "ventes ouvertes"
 
-#: core/models.py:56
+#: core/models.py:84
 msgid "Untick to pause all online sales."
 msgstr "Décochez pour suspendre toutes les ventes en ligne."
 
-#: core/models.py:57
+#: core/models.py:85
 msgid "holder photo required"
 msgstr "photo du titulaire obligatoire"
 
-#: core/models.py:58
+#: core/models.py:86
 msgid "max tickets per order"
 msgstr "tickets max. par commande"
 
-#: core/models.py:60
+#: core/models.py:88
 msgid "show remaining tickets"
 msgstr "afficher les places restantes"
 
-#: core/models.py:61
+#: core/models.py:89
 msgid ""
 "Shows “Only X left” on a category when less than a fifth of it remains."
 msgstr ""
 "Affiche « Plus que X » sur une catégorie quand il en reste moins d'un "
 "cinquième."
 
-#: core/models.py:63
+#: core/models.py:91
 msgid "service fee per order (XOF)"
 msgstr "frais de service par commande (XOF)"
 
-#: core/models.py:64
+#: core/models.py:92
 msgid "service fee per order (NGN)"
 msgstr "frais de service par commande (NGN)"
 
-#: core/models.py:67
+#: core/models.py:95
 msgid "sender e-mail"
 msgstr "e-mail d'expédition"
 
-#: core/models.py:68
+#: core/models.py:96
 msgid ""
 "e.g. NextWave Party <tickets@nextwaveparty.com>. Empty = DEFAULT_FROM_EMAIL."
 msgstr ""
 "par ex. NextWave Party <tickets@nextwaveparty.com>. Vide = "
 "DEFAULT_FROM_EMAIL."
 
-#: core/models.py:71
+#: core/models.py:99
 msgid "about text (EN)"
 msgstr "texte À propos (EN)"
 
-#: core/models.py:72
+#: core/models.py:100
 msgid "about text (FR)"
 msgstr "texte À propos (FR)"
 
-#: core/models.py:73
+#: core/models.py:101
 msgid "about image"
 msgstr "image À propos"
 
-#: core/models.py:75
+#: core/models.py:103
 msgid "terms (EN)"
 msgstr "conditions (EN)"
 
-#: core/models.py:76
+#: core/models.py:104
 msgid "terms (FR)"
 msgstr "conditions (FR)"
 
-#: core/models.py:77
+#: core/models.py:105
 msgid "privacy policy (EN)"
 msgstr "politique de confidentialité (EN)"
 
-#: core/models.py:78
+#: core/models.py:106
 msgid "privacy policy (FR)"
 msgstr "politique de confidentialité (FR)"
 
-#: core/models.py:83 core/models.py:84
+#: core/models.py:111 core/models.py:112
 msgid "site settings"
 msgstr "réglages du site"
 
-#: core/models.py:114 core/models.py:224
+#: core/models.py:143
+msgid "presented by"
+msgstr "présenté par"
+
+#: core/models.py:144
+msgid ""
+"Small line above the title, e.g. Next Wave Africa & Vibe City Entertainment."
+msgstr ""
+"Petite ligne au-dessus du titre, ex. Next Wave Africa & Vibe City "
+"Entertainment."
+
+#: core/models.py:146 core/models.py:351 scanner/models.py:27
 msgid "name"
 msgstr "nom"
 
-#: core/models.py:115
+#: core/models.py:147
 msgid "edition"
 msgstr "édition"
 
-#: core/models.py:116 lineup/models.py:11 tickets/models.py:22
+#: core/models.py:147
+msgid "Shown in the red box under the title, e.g. With Q-Dot."
+msgstr "Affiché dans l’encadré rouge sous le titre, ex. With Q-Dot."
+
+#: core/models.py:148 lineup/models.py:11 tickets/models.py:22
 msgid "slug"
 msgstr "slug"
 
-#: core/models.py:117 tickets/models.py:23
+#: core/models.py:149 tickets/models.py:23
 msgid "description (EN)"
 msgstr "description (EN)"
 
-#: core/models.py:118 tickets/models.py:24
+#: core/models.py:150 tickets/models.py:24
 msgid "description (FR)"
 msgstr "description (FR)"
 
-#: core/models.py:120
+#: core/models.py:152
 msgid "practical info (EN)"
 msgstr "infos pratiques (EN)"
 
-#: core/models.py:121
+#: core/models.py:153
 msgid "Shown in the ticket e-mail: forbidden items, dress code, minimum age…"
 msgstr ""
 "Affiché dans l'e-mail du ticket : objets interdits, tenue, âge minimum…"
 
-#: core/models.py:123
+#: core/models.py:155
 msgid "practical info (FR)"
 msgstr "infos pratiques (FR)"
 
-#: core/models.py:125
+#: core/models.py:157
 msgid "show starts"
 msgstr "début du show"
 
-#: core/models.py:126
+#: core/models.py:158
 msgid "doors open"
 msgstr "ouverture des portes"
 
-#: core/models.py:127
+#: core/models.py:159
 msgid "ends"
 msgstr "fin"
 
-#: core/models.py:129
+#: core/models.py:161
+msgid "number of days"
+msgstr "nombre de jours"
+
+#: core/models.py:162
+msgid ""
+"One ticket = one entry per day. 2 = the ticket is valid once on each of two "
+"consecutive days (e.g. Dec 25 and Dec 26), starting on the show date."
+msgstr ""
+"Un ticket = une entrée par jour. 2 = le ticket est valable une fois chacun "
+"des deux jours consécutifs (ex. 25 et 26 déc.), à partir de la date du "
+"spectacle."
+
+#: core/models.py:166
 msgid "venue name"
 msgstr "nom du lieu"
 
-#: core/models.py:130
+#: core/models.py:167
 msgid "venue address"
 msgstr "adresse du lieu"
 
-#: core/models.py:131 core/models.py:226
+#: core/models.py:168 core/models.py:353
 msgid "city"
 msgstr "ville"
 
-#: core/models.py:132 core/models.py:227 payments/models.py:27
-#: tickets/models.py:132
+#: core/models.py:169 core/models.py:354 payments/models.py:27
+#: tickets/models.py:134
 msgid "country"
 msgstr "pays"
 
-#: core/models.py:134
+#: core/models.py:171
 msgid "Google Maps embed URL"
 msgstr "URL d'intégration Google Maps"
 
-#: core/models.py:135
+#: core/models.py:172
 msgid "Google Maps → Share → Embed a map → copy the src=\"…\" URL."
 msgstr "Google Maps → Partager → Intégrer une carte → copiez l'URL src=\"…\"."
 
-#: core/models.py:137
+#: core/models.py:174
 msgid "Google Maps link"
 msgstr "lien Google Maps"
 
-#: core/models.py:139
+#: core/models.py:176
+msgid "note under the tickets (EN)"
+msgstr "note sous les tickets (EN)"
+
+#: core/models.py:177
+msgid ""
+"e.g. One RFID wristband per person, given at the entrance with your QR "
+"ticket."
+msgstr ""
+"ex. One RFID wristband per person, given at the entrance with your QR "
+"ticket."
+
+#: core/models.py:179
+msgid "note under the tickets (FR)"
+msgstr "note sous les tickets (FR)"
+
+#: core/models.py:181
+msgid "reservation & enquiry numbers"
+msgstr "numéros de réservation et renseignements"
+
+#: core/models.py:182
+msgid ""
+"Comma-separated, e.g. 07070257650, 09166119357, +2290190776888. Shown like "
+"on the poster."
+msgstr ""
+"Séparés par des virgules, ex. 07070257650, 09166119357, +2290190776888. "
+"Affichés comme sur l’affiche."
+
+#: core/models.py:185
 msgid "hall map"
 msgstr "plan de la salle"
 
-#: core/models.py:140
+#: core/models.py:186
 msgid "official poster"
 msgstr "affiche officielle"
 
-#: core/models.py:141
+#: core/models.py:187
 msgid "teaser video (MP4)"
 msgstr "vidéo teaser (MP4)"
 
-#: core/models.py:142
+#: core/models.py:188
 msgid "teaser video link (YouTube/Vimeo)"
 msgstr "lien vidéo teaser (YouTube/Vimeo)"
 
-#: core/models.py:143
+#: core/models.py:189
 msgid "video cover image"
 msgstr "image de couverture de la vidéo"
 
-#: core/models.py:145 core/models.py:211 core/models.py:232 core/models.py:249
-#: lineup/models.py:35 payments/models.py:33 scanner/models.py:39
-#: tickets/models.py:30
+#: core/models.py:191 core/models.py:301 core/models.py:320 core/models.py:359
+#: core/models.py:376 lineup/models.py:35 payments/models.py:33
+#: scanner/models.py:30 scanner/models.py:99 tickets/models.py:30
 msgid "active"
 msgstr "actif"
 
-#: core/models.py:145
+#: core/models.py:191
 msgid "The active event is the one shown on the website."
 msgstr "L'événement actif est celui affiché sur le site."
 
-#: core/models.py:149 core/models.py:204 core/models.py:223
-#: lineup/models.py:24 scanner/models.py:32 tickets/models.py:19
-#: tickets/models.py:128
+#: core/models.py:195 core/models.py:294 core/models.py:315 core/models.py:350
+#: lineup/models.py:24 scanner/models.py:92 tickets/models.py:19
+#: tickets/models.py:130 tickets/models.py:285
 msgid "event"
 msgstr "événement"
 
-#: core/models.py:150
+#: core/models.py:196
 msgid "events"
 msgstr "événements"
 
-#: core/models.py:205
+#: core/models.py:295
 msgid "image"
 msgstr "image"
 
-#: core/models.py:205
+#: core/models.py:295
 msgid "Landscape, at least 1600×900, under 400 KB."
 msgstr "Paysage, au moins 1600×900, moins de 400 Ko."
 
-#: core/models.py:206
+#: core/models.py:296 core/models.py:317
 msgid "title (EN)"
 msgstr "titre (EN)"
 
-#: core/models.py:207
+#: core/models.py:297 core/models.py:318
 msgid "title (FR)"
 msgstr "titre (FR)"
 
-#: core/models.py:208 payments/models.py:24
+#: core/models.py:298 payments/models.py:24
 msgid "subtitle (EN)"
 msgstr "sous-titre (EN)"
 
-#: core/models.py:209 payments/models.py:25
+#: core/models.py:299 payments/models.py:25
 msgid "subtitle (FR)"
 msgstr "sous-titre (FR)"
 
-#: core/models.py:210 core/models.py:231 core/models.py:248
+#: core/models.py:300 core/models.py:319 core/models.py:358 core/models.py:375
 #: lineup/models.py:12 lineup/models.py:34 payments/models.py:34
-#: tickets/models.py:33 tickets/models.py:103
+#: tickets/models.py:33 tickets/models.py:105
 msgid "position"
 msgstr "position"
 
-#: core/models.py:214
+#: core/models.py:304
 msgid "hero slide"
 msgstr "diapositive d'accueil"
 
-#: core/models.py:215
+#: core/models.py:305
 msgid "hero slides"
 msgstr "diapositives d'accueil"
 
-#: core/models.py:225
+#: core/models.py:316
+msgid "YouTube link"
+msgstr "lien YouTube"
+
+#: core/models.py:316
+msgid "e.g. https://www.youtube.com/watch?v=… or https://youtu.be/…"
+msgstr "ex. https://www.youtube.com/watch?v=… ou https://youtu.be/…"
+
+#: core/models.py:323
+msgid "YouTube video"
+msgstr "vidéo YouTube"
+
+#: core/models.py:334
+msgid "This is not a YouTube video link."
+msgstr "Ce n’est pas un lien de vidéo YouTube."
+
+#: core/models.py:351
+msgid "Shop or contact person. Empty = the city only."
+msgstr "Boutique ou contact. Vide = la ville seulement."
+
+#: core/models.py:352
 msgid "address"
 msgstr "adresse"
 
-#: core/models.py:228
+#: core/models.py:355
 msgid "phone"
 msgstr "téléphone"
 
-#: core/models.py:229
+#: core/models.py:356
 msgid "opening hours"
 msgstr "horaires"
 
-#: core/models.py:230
+#: core/models.py:357
 msgid "map link"
 msgstr "lien de la carte"
 
-#: core/models.py:235
+#: core/models.py:362
 msgid "physical outlet"
 msgstr "point de vente"
 
-#: core/models.py:236
+#: core/models.py:363
 msgid "physical outlets"
 msgstr "points de vente"
 
-#: core/models.py:244
+#: core/models.py:371
 msgid "question (EN)"
 msgstr "question (EN)"
 
-#: core/models.py:245
+#: core/models.py:372
 msgid "question (FR)"
 msgstr "question (FR)"
 
-#: core/models.py:246
+#: core/models.py:373
 msgid "answer (EN)"
 msgstr "réponse (EN)"
 
-#: core/models.py:247
+#: core/models.py:374
 msgid "answer (FR)"
 msgstr "réponse (FR)"
 
@@ -572,15 +680,15 @@ msgstr "Rôle et biographie"
 msgid "Social links"
 msgstr "Réseaux sociaux"
 
-#: lineup/admin.py:31 scanner/admin.py:109 tickets/admin.py:437
+#: lineup/admin.py:31 scanner/admin.py:251 tickets/admin.py:478
 msgid "Photo"
 msgstr "Photo"
 
-#: lineup/admin.py:35 tickets/admin.py:249 tickets/forms.py:26
+#: lineup/admin.py:35 tickets/admin.py:255 tickets/forms.py:26
 msgid "Country"
 msgstr "Pays"
 
-#: lineup/apps.py:8 templates/base.html:46 templates/core/home.html:122
+#: lineup/apps.py:8 templates/base.html:45 templates/core/home.html:172
 msgid "Lineup"
 msgstr "Programmation"
 
@@ -608,7 +716,7 @@ msgstr "catégorie"
 msgid "stage name"
 msgstr "nom de scène"
 
-#: lineup/models.py:27 scanner/models.py:37
+#: lineup/models.py:27 scanner/models.py:97
 msgid "photo"
 msgstr "photo"
 
@@ -693,7 +801,7 @@ msgstr "Clés API (chiffrées)"
 msgid "URLs to declare in the gateway dashboard"
 msgstr "URL à déclarer dans le tableau de bord de la passerelle"
 
-#: payments/admin.py:93
+#: payments/admin.py:93 tickets/models.py:275
 msgid "Ready"
 msgstr "Prête"
 
@@ -737,7 +845,7 @@ msgstr "nom affiché"
 msgid "e.g. MTN, Moov, Celtiis, card"
 msgstr "par ex. MTN, Moov, Celtiis, carte"
 
-#: payments/models.py:28 tickets/models.py:133
+#: payments/models.py:28 tickets/models.py:135
 msgid "currency"
 msgstr "devise"
 
@@ -757,7 +865,7 @@ msgstr "clé secrète"
 msgid "extra key"
 msgstr "clé supplémentaire"
 
-#: payments/models.py:38 tickets/models.py:141
+#: payments/models.py:38 tickets/models.py:143
 msgid "payment gateway"
 msgstr "passerelle de paiement"
 
@@ -777,8 +885,8 @@ msgstr "Retour navigateur"
 msgid "Webhook received"
 msgstr "Webhook reçu"
 
-#: payments/models.py:92 tickets/models.py:158 tickets/models.py:196
-#: tickets/models.py:219
+#: payments/models.py:92 tickets/models.py:160 tickets/models.py:198
+#: tickets/models.py:221 tickets/models.py:300
 msgid "order"
 msgstr "commande"
 
@@ -806,11 +914,11 @@ msgstr "requête"
 msgid "response"
 msgstr "réponse"
 
-#: payments/models.py:99
+#: payments/models.py:99 tickets/models.py:294
 msgid "note"
 msgstr "note"
 
-#: payments/models.py:100 scanner/models.py:106
+#: payments/models.py:100 scanner/models.py:205
 msgid "date"
 msgstr "date"
 
@@ -870,7 +978,7 @@ msgstr "Clé secrète (sk_test_… / sk_live_…) — signe aussi les webhooks"
 msgid "Not used by Paystack"
 msgstr "Non utilisée par Paystack"
 
-#: payments/views.py:41 tickets/views.py:92
+#: payments/views.py:41 tickets/views.py:94
 msgid ""
 "The payment could not be started. Please try again or choose another method."
 msgstr ""
@@ -895,221 +1003,402 @@ msgstr "Veuillez saisir un numéro Mobile Money valide."
 msgid "The payment could not be started. Please try again."
 msgstr "Le paiement n'a pas pu démarrer. Veuillez réessayer."
 
-#: scanner/admin.py:46 templates/admin/index.html:99
+#: scanner/admin.py:52 templates/admin/index.html:99
 msgid "Result"
 msgstr "Résultat"
 
-#: scanner/admin.py:50
+#: scanner/admin.py:56 scanner/admin.py:91
 msgid "Holder"
 msgstr "Titulaire"
 
-#: scanner/admin.py:58
+#: scanner/admin.py:64
 msgid "Scanned value"
 msgstr "Valeur scannée"
 
-#: scanner/admin.py:95
-msgid "Card"
-msgstr "Carte"
+#: scanner/admin.py:68 scanner/admin.py:99 templates/scanner/scan.html:33
+#: tickets/admin.py:415
+msgid "Scanner"
+msgstr "Scanner"
+
+#: scanner/admin.py:87 templates/tickets/order.html:40 tickets/admin.py:444
+msgid "No."
+msgstr "N°"
+
+#: scanner/admin.py:95 templates/admin/index.html:57
+msgid "Category"
+msgstr "Catégorie"
 
 #: scanner/admin.py:118
-msgid "Name"
-msgstr "Nom"
+#, python-format
+msgid ""
+"At most %(max)s scanners can be active at the same time: deactivate another "
+"one first."
+msgstr ""
+"%(max)s scanners au maximum peuvent être actifs en même temps : désactivez-"
+"en un d’abord."
 
-#: scanner/admin.py:122
-msgid "Role"
-msgstr "Fonction"
+#: scanner/admin.py:139
+#, python-format
+msgid ""
+"Give the agent the scan page link, the login and the access code. Up to "
+"%(max)s scanners can be active at the same time; untick “active” to log a "
+"phone out."
+msgstr ""
+"Donnez à l’agent le lien de la page de scan, l’identifiant et le code "
+"d’accès. Jusqu’à %(max)s scanners actifs en même temps ; décochez « actif » "
+"pour déconnecter un téléphone."
 
-#: scanner/admin.py:129
-msgid "Card preview"
-msgstr "Aperçu de la carte"
+#: scanner/admin.py:143
+msgid "To send to the agent"
+msgstr "À envoyer à l’agent"
 
-#: scanner/admin.py:132
-msgid "Save first to see the card."
-msgstr "Enregistrez d'abord pour voir la carte."
+#: scanner/admin.py:144
+msgid "Use"
+msgstr "Utilisation"
 
-#: scanner/admin.py:140
-msgid "Download card (PNG)"
-msgstr "Télécharger la carte (PNG)"
+#: scanner/admin.py:153
+#, python-format
+msgid "Gate %(n)s"
+msgstr "Porte %(n)s"
 
-#: scanner/admin.py:147
-msgid "Download card (PDF)"
-msgstr "Télécharger la carte (PDF)"
+#: scanner/admin.py:156 scanner/admin.py:177 scanner/views.py:94
+#: templates/scanner/login.html:30
+msgid "Access code"
+msgstr "Code d’accès"
 
-#: scanner/admin.py:154
-msgid "Download the selected cards (one PDF, card size)"
-msgstr "Télécharger les cartes sélectionnées (un PDF, format carte)"
+#: scanner/admin.py:160
+msgid "Scan page, login and code"
+msgstr "Page de scan, identifiant et code"
 
-#: scanner/admin.py:161
+#: scanner/admin.py:163
+msgid "Save first: the access code is created automatically."
+msgstr "Enregistrez d’abord : le code d’accès est créé automatiquement."
+
+#: scanner/admin.py:165
+#, python-format
+msgid ""
+"NextWave scanner\n"
+"Page: %(url)s\n"
+"Login: %(login)s\n"
+"Code: %(code)s"
+msgstr ""
+"Scanner NextWave\n"
+"Page : %(url)s\n"
+"Identifiant : %(login)s\n"
+"Code : %(code)s"
+
+#: scanner/admin.py:175
+msgid "Page"
+msgstr "Page"
+
+#: scanner/admin.py:176 scanner/views.py:93 templates/scanner/login.html:28
+msgid "Login"
+msgstr "Identifiant"
+
+#: scanner/admin.py:178
+msgid "Send by WhatsApp"
+msgstr "Envoyer par WhatsApp"
+
+#: scanner/admin.py:181
+msgid "New access code"
+msgstr "Nouveau code d’accès"
+
+#: scanner/admin.py:186
+msgid "New code created: the phone using the old one is logged out."
+msgstr ""
+"Nouveau code créé : le téléphone qui utilisait l’ancien est déconnecté."
+
+#: scanner/admin.py:189 scanner/admin.py:303
 msgid "Activate"
 msgstr "Activer"
 
-#: scanner/admin.py:164
+#: scanner/admin.py:194
+#, python-format
+msgid "%(count)s scanner(s) activated."
+msgstr "%(count)s scanner(s) activé(s)."
+
+#: scanner/admin.py:196
+#, python-format
+msgid "At most %(max)s scanners can be active at the same time."
+msgstr "%(max)s scanners au maximum peuvent être actifs en même temps."
+
+#: scanner/admin.py:198
+msgid "Deactivate (logs the phone out)"
+msgstr "Désactiver (déconnecte le téléphone)"
+
+#: scanner/admin.py:201
+#, python-format
+msgid "%(count)s scanner(s) deactivated."
+msgstr "%(count)s scanner(s) désactivé(s)."
+
+#: scanner/admin.py:237
+msgid "Card"
+msgstr "Carte"
+
+#: scanner/admin.py:260
+msgid "Name"
+msgstr "Nom"
+
+#: scanner/admin.py:264
+msgid "Role"
+msgstr "Fonction"
+
+#: scanner/admin.py:271
+msgid "Card preview"
+msgstr "Aperçu de la carte"
+
+#: scanner/admin.py:274
+msgid "Save first to see the card."
+msgstr "Enregistrez d'abord pour voir la carte."
+
+#: scanner/admin.py:282
+msgid "Download card (PNG)"
+msgstr "Télécharger la carte (PNG)"
+
+#: scanner/admin.py:289
+msgid "Download card (PDF)"
+msgstr "Télécharger la carte (PDF)"
+
+#: scanner/admin.py:296
+msgid "Download the selected cards (one PDF, card size)"
+msgstr "Télécharger les cartes sélectionnées (un PDF, format carte)"
+
+#: scanner/admin.py:306
 #, python-format
 msgid "%(count)s card(s) activated."
 msgstr "%(count)s carte(s) activée(s)."
 
-#: scanner/admin.py:166
+#: scanner/admin.py:308
 msgid "Deactivate (refused at the entrance)"
 msgstr "Désactiver (refusée à l'entrée)"
 
-#: scanner/admin.py:169
+#: scanner/admin.py:311
 #, python-format
 msgid "%(count)s card(s) deactivated."
 msgstr "%(count)s carte(s) désactivée(s)."
 
-#: scanner/apps.py:8 templates/scanner/login.html:16
+#: scanner/apps.py:8
 msgid "Entrance scanner"
 msgstr "Scanner d'entrée"
 
-#: scanner/badges.py:120
+#: scanner/badges.py:70
+msgid "STAFF PASS"
+msgstr "PASS STAFF"
+
+#: scanner/badges.py:116
 msgid "ACCESS"
 msgstr "ACCÈS"
 
-#: scanner/models.py:14
-msgid "Staff"
-msgstr "Staff"
+#: scanner/models.py:27
+msgid "Who uses it, e.g. Gate 1 — John."
+msgstr "Qui l’utilise, ex. Porte 1 — Jean."
 
-#: scanner/models.py:15
-msgid "Security"
-msgstr "Sécurité"
+#: scanner/models.py:28
+msgid "login"
+msgstr "identifiant"
 
-#: scanner/models.py:16
-msgid "Organizer"
-msgstr "Organisation"
+#: scanner/models.py:28
+msgid "Identifier the agent types, e.g. gate1."
+msgstr "Identifiant que l’agent saisit, ex. porte1."
 
-#: scanner/models.py:17 templates/core/home.html:304
-msgid "Artist"
-msgstr "Artiste"
+#: scanner/models.py:29
+msgid "access code"
+msgstr "code d’accès"
 
-#: scanner/models.py:18
-msgid "Press"
-msgstr "Presse"
+#: scanner/models.py:30
+msgid "Untick to log the agent out and refuse the code."
+msgstr "Décochez pour déconnecter l’agent et refuser le code."
 
-#: scanner/models.py:19
-msgid "Volunteer"
-msgstr "Bénévole"
+#: scanner/models.py:31
+msgid "valid until"
+msgstr "valable jusqu’au"
 
-#: scanner/models.py:20
-msgid "Technical crew"
-msgstr "Technique"
+#: scanner/models.py:31
+msgid "Empty = no limit."
+msgstr "Vide = sans limite."
+
+#: scanner/models.py:32
+msgid "scans"
+msgstr "scans"
 
 #: scanner/models.py:33
-msgid "first name"
-msgstr "prénom"
+msgid "last used"
+msgstr "dernière utilisation"
 
-#: scanner/models.py:34
-msgid "last name"
-msgstr "nom"
-
-#: scanner/models.py:35
-msgid "role"
-msgstr "fonction"
-
-#: scanner/models.py:36
-msgid "title"
-msgstr "intitulé"
-
-#: scanner/models.py:36
-msgid "Optional, e.g. Head of security, Stage manager."
-msgstr "Facultatif, par ex. Chef sécurité, Régisseur."
-
-#: scanner/models.py:38
-msgid "card language"
-msgstr "langue de la carte"
-
-#: scanner/models.py:39
-msgid "Untick to refuse this card at the entrance."
-msgstr "Décochez pour refuser cette carte à l'entrée."
-
-#: scanner/models.py:42 tickets/models.py:222
-msgid "code"
-msgstr "code"
-
-#: scanner/models.py:43 tickets/models.py:225
-msgid "QR content"
-msgstr "contenu du QR"
-
-#: scanner/models.py:47
-msgid "entries"
-msgstr "passages"
-
-#: scanner/models.py:48
-msgid "last entry"
-msgstr "dernier passage"
-
-#: scanner/models.py:49 tickets/models.py:153 tickets/models.py:237
+#: scanner/models.py:34 scanner/models.py:109 tickets/models.py:155
+#: tickets/models.py:243 tickets/models.py:309
 msgid "created"
 msgstr "créé le"
 
-#: scanner/models.py:52 scanner/models.py:97
+#: scanner/models.py:37 scanner/models.py:154 scanner/models.py:201
+msgid "scanner access"
+msgstr "accès scanner"
+
+#: scanner/models.py:38
+msgid "scanner accesses"
+msgstr "accès scanner"
+
+#: scanner/models.py:74
+msgid "Staff"
+msgstr "Staff"
+
+#: scanner/models.py:75
+msgid "Security"
+msgstr "Sécurité"
+
+#: scanner/models.py:76
+msgid "Organizer"
+msgstr "Organisation"
+
+#: scanner/models.py:77 templates/core/home.html:323
+msgid "Artist"
+msgstr "Artiste"
+
+#: scanner/models.py:78
+msgid "Press"
+msgstr "Presse"
+
+#: scanner/models.py:79
+msgid "Volunteer"
+msgstr "Bénévole"
+
+#: scanner/models.py:80
+msgid "Technical crew"
+msgstr "Technique"
+
+#: scanner/models.py:93
+msgid "first name"
+msgstr "prénom"
+
+#: scanner/models.py:94
+msgid "last name"
+msgstr "nom"
+
+#: scanner/models.py:95
+msgid "role"
+msgstr "fonction"
+
+#: scanner/models.py:96
+msgid "title"
+msgstr "intitulé"
+
+#: scanner/models.py:96
+msgid "Optional, e.g. Head of security, Stage manager."
+msgstr "Facultatif, par ex. Chef sécurité, Régisseur."
+
+#: scanner/models.py:98
+msgid "card language"
+msgstr "langue de la carte"
+
+#: scanner/models.py:99
+msgid "Untick to refuse this card at the entrance."
+msgstr "Décochez pour refuser cette carte à l'entrée."
+
+#: scanner/models.py:102 tickets/models.py:224
+msgid "code"
+msgstr "code"
+
+#: scanner/models.py:103 tickets/models.py:231
+msgid "QR content"
+msgstr "contenu du QR"
+
+#: scanner/models.py:107 scanner/models.py:159
+msgid "entries"
+msgstr "passages"
+
+#: scanner/models.py:108
+msgid "last entry"
+msgstr "dernier passage"
+
+#: scanner/models.py:112 scanner/models.py:192
 msgid "staff card"
 msgstr "carte staff"
 
-#: scanner/models.py:53
+#: scanner/models.py:113
 msgid "staff cards"
 msgstr "cartes staff"
 
-#: scanner/models.py:84
-msgid "Accepted"
-msgstr "Accepté"
-
-#: scanner/models.py:85
-msgid "Already used"
-msgstr "Déjà utilisé"
-
-#: scanner/models.py:86
-msgid "Invalid"
-msgstr "Invalide"
-
-#: scanner/models.py:87 tickets/models.py:119 tickets/models.py:217
-msgid "Cancelled"
-msgstr "Annulé"
-
-#: scanner/models.py:88
-msgid "Wrong event"
-msgstr "Mauvais événement"
-
-#: scanner/models.py:89
-msgid "Staff card"
-msgstr "Carte staff"
-
-#: scanner/models.py:93 tickets/models.py:240
+#: scanner/models.py:145 scanner/models.py:188 tickets/models.py:246
 msgid "ticket"
 msgstr "ticket"
 
-#: scanner/models.py:99
-msgid "scanned value"
-msgstr "valeur scannée"
+#: scanner/models.py:146
+msgid "day"
+msgstr "jour"
 
-#: scanner/models.py:102
+#: scanner/models.py:147
+msgid "time"
+msgstr "heure"
+
+#: scanner/models.py:150 scanner/models.py:197
 msgid "scanned by"
 msgstr "scanné par"
 
-#: scanner/models.py:104
+#: scanner/models.py:158
+msgid "entry"
+msgstr "entrée"
+
+#: scanner/models.py:178
+msgid "Accepted"
+msgstr "Accepté"
+
+#: scanner/models.py:179
+msgid "Already used"
+msgstr "Déjà utilisé"
+
+#: scanner/models.py:180
+msgid "Invalid"
+msgstr "Invalide"
+
+#: scanner/models.py:181 tickets/models.py:121 tickets/models.py:219
+msgid "Cancelled"
+msgstr "Annulé"
+
+#: scanner/models.py:182
+msgid "Wrong event"
+msgstr "Mauvais événement"
+
+#: scanner/models.py:183
+msgid "Not valid today"
+msgstr "Pas valable aujourd’hui"
+
+#: scanner/models.py:184
+msgid "Staff card"
+msgstr "Carte staff"
+
+#: scanner/models.py:194
+msgid "scanned value"
+msgstr "valeur scannée"
+
+#: scanner/models.py:203
 msgid "device"
 msgstr "appareil"
 
-#: scanner/models.py:105
+#: scanner/models.py:204
 msgid "result"
 msgstr "résultat"
 
-#: scanner/models.py:109
+#: scanner/models.py:208
 msgid "scan log"
 msgstr "scan"
 
-#: scanner/models.py:110
+#: scanner/models.py:209
 msgid "scan logs"
 msgstr "journal des scans"
 
-#: scanner/views.py:54 templates/scanner/login.html:20 tickets/forms.py:32
+#: scanner/views.py:87 templates/scanner/login.html:42 tickets/forms.py:32
 msgid "E-mail"
 msgstr "E-mail"
 
-#: scanner/views.py:68
+#: scanner/views.py:102
+msgid "Wrong login or access code, or this access was disabled."
+msgstr "Identifiant ou code d’accès incorrect, ou cet accès a été désactivé."
+
+#: scanner/views.py:127
 msgid "Too many attempts. Please wait 15 minutes."
 msgstr "Trop de tentatives. Veuillez patienter 15 minutes."
 
-#: scanner/views.py:75
+#: scanner/views.py:137
 msgid "This account is not allowed to scan tickets."
 msgstr "Ce compte n'est pas autorisé à scanner les tickets."
 
@@ -1158,7 +1447,11 @@ msgstr "Recettes NGN"
 msgid "Tickets issued"
 msgstr "Tickets émis"
 
-#: templates/admin/index.html:49 tickets/models.py:148
+#: templates/admin/index.html:49
+msgid "printed"
+msgstr "imprimés"
+
+#: templates/admin/index.html:49 tickets/models.py:150
 msgid "complimentary"
 msgstr "invitations"
 
@@ -1166,7 +1459,7 @@ msgstr "invitations"
 msgid "pending orders"
 msgstr "commandes en attente"
 
-#: templates/admin/index.html:50 templates/scanner/scan.html:20
+#: templates/admin/index.html:50
 msgid "Checked-in"
 msgstr "Entrées"
 
@@ -1174,7 +1467,11 @@ msgstr "Entrées"
 msgid "live"
 msgstr "en direct"
 
-#: templates/admin/index.html:50
+#: templates/admin/index.html:50 templates/scanner/scan.html:78
+msgid "Day"
+msgstr "Jour"
+
+#: templates/admin/index.html:50 templates/scanner/login.html:33
 msgid "Open the scanner"
 msgstr "Ouvrir le scanner"
 
@@ -1182,11 +1479,7 @@ msgstr "Ouvrir le scanner"
 msgid "Sales by category"
 msgstr "Ventes par catégorie"
 
-#: templates/admin/index.html:57
-msgid "Category"
-msgstr "Catégorie"
-
-#: templates/admin/index.html:57 tickets/models.py:124
+#: templates/admin/index.html:57 tickets/models.py:126
 msgid "Sold"
 msgstr "Vendus"
 
@@ -1210,7 +1503,7 @@ msgstr "Par passerelle de paiement"
 msgid "Gateway"
 msgstr "Passerelle"
 
-#: templates/admin/index.html:88 tickets/admin.py:230
+#: templates/admin/index.html:88 tickets/admin.py:236
 msgid "Amount"
 msgstr "Montant"
 
@@ -1226,8 +1519,8 @@ msgstr "Derniers scans"
 msgid "Time"
 msgstr "Heure"
 
-#: templates/admin/index.html:99 templates/tickets/checkout.html:32
-#: templates/tickets/checkout.html:113 templates/tickets/order.html:37
+#: templates/admin/index.html:99 templates/tickets/checkout.html:35
+#: templates/tickets/order.html:37
 msgid "Ticket"
 msgstr "Ticket"
 
@@ -1243,223 +1536,340 @@ msgstr "Aucun scan pour l'instant."
 msgid "Skip to content"
 msgstr "Aller au contenu"
 
-#: templates/base.html:28 templates/base.html:45 templates/base.html:70
+#: templates/base.html:27 templates/base.html:66
 msgid "Home"
 msgstr "Accueil"
 
-#: templates/base.html:37 templates/base.html:108 templates/base.html:112
-#: templates/core/home.html:36
+#: templates/base.html:36 templates/base.html:105 templates/base.html:109
 msgid "Buy Ticket"
 msgstr "Acheter un ticket"
 
-#: templates/base.html:39
+#: templates/base.html:38
 msgid "Menu"
 msgstr "Menu"
 
-#: templates/base.html:39
+#: templates/base.html:38
 msgid "Close menu"
 msgstr "Fermer le menu"
 
-#: templates/base.html:43
+#: templates/base.html:42
 msgid "Main menu"
 msgstr "Menu principal"
 
-#: templates/base.html:51 templates/base.html:94
+#: templates/base.html:46 templates/core/home.html:248
+msgid "Practical info"
+msgstr "Infos pratiques"
+
+#: templates/base.html:48 templates/base.html:91
 #: templates/tickets/find_ticket.html:4 templates/tickets/find_ticket.html:9
-#: templates/tickets/order.html:66 templates/tickets/order_locked.html:14
+#: templates/tickets/order.html:67 templates/tickets/order_locked.html:14
 msgid "Find my ticket"
 msgstr "Retrouver mon ticket"
 
-#: templates/base.html:74
+#: templates/base.html:70
 msgid "Contact"
 msgstr "Contact"
 
-#: templates/base.html:82
+#: templates/base.html:79
 msgid "Follow us"
 msgstr "Suivez-nous"
 
-#: templates/base.html:92
+#: templates/base.html:89
 msgid "Help"
 msgstr "Aide"
 
-#: templates/base.html:95
+#: templates/base.html:92
 msgid "Terms"
 msgstr "Conditions"
 
-#: templates/base.html:96
+#: templates/base.html:93
 msgid "Privacy"
 msgstr "Confidentialité"
 
-#: templates/base.html:101
+#: templates/base.html:98
 msgid "All rights reserved."
 msgstr "Tous droits réservés."
 
-#: templates/base.html:102
+#: templates/base.html:99
 msgid "Made by"
 msgstr "Réalisé par"
 
-#: templates/base.html:110
+#: templates/base.html:107 templates/core/home.html:83
 msgid "From"
 msgstr "À partir de"
 
-#: templates/core/home.html:38
+#: templates/core/home.html:14
+msgid "presents"
+msgstr "présentent"
+
+#: templates/core/home.html:18
+#, python-format
+msgid "%(n)s days event"
+msgstr "événement de %(n)s jours"
+
+#: templates/core/home.html:21 tickets/admin.py:81
+msgid "Prices"
+msgstr "Prix"
+
+#: templates/core/home.html:30
+#, python-format
+msgid "Note: 1 ticket covers %(n)s days"
+msgstr "Note : 1 ticket couvre les %(n)s jours"
+
+#: templates/core/home.html:34 templates/core/home.html:317
+#: templates/tickets/checkout.html:17
+msgid "daily"
+msgstr "tous les jours"
+
+#: templates/core/home.html:38 templates/core/home.html:318
+msgid "Buy my ticket"
+msgstr "Acheter mon ticket"
+
+#: templates/core/home.html:39
+msgid "See the line-up"
+msgstr "Voir le line-up"
+
+#: templates/core/home.html:42
 msgid "Countdown to the show"
 msgstr "Compte à rebours avant le show"
 
-#: templates/core/home.html:39
+#: templates/core/home.html:43
 msgid "Days"
 msgstr "Jours"
 
-#: templates/core/home.html:40
+#: templates/core/home.html:44
 msgid "Hours"
 msgstr "Heures"
 
-#: templates/core/home.html:41
+#: templates/core/home.html:45
 msgid "Minutes"
 msgstr "Minutes"
 
-#: templates/core/home.html:42
+#: templates/core/home.html:46
 msgid "Seconds"
 msgstr "Secondes"
 
-#: templates/core/home.html:44
+#: templates/core/home.html:48
 msgid "The party is on!"
 msgstr "La fête a commencé !"
 
-#: templates/core/home.html:49
-msgid "Previous slide"
-msgstr "Diapositive précédente"
-
-#: templates/core/home.html:50
-msgid "Next slide"
-msgstr "Diapositive suivante"
-
-#: templates/core/home.html:51
-msgid "Choose a slide"
-msgstr "Choisir une diapositive"
+#: templates/core/home.html:53 templates/core/home.html:54
+msgid "Official poster"
+msgstr "Affiche officielle"
 
 #: templates/core/home.html:53
-#, python-format
-msgid "Slide %(n)s"
-msgstr "Diapositive %(n)s"
+msgid "Open the official poster"
+msgstr "Ouvrir l’affiche officielle"
 
-#: templates/core/home.html:60
+#: templates/core/home.html:56
+msgid "Download the poster"
+msgstr "Télécharger l'affiche"
+
+#: templates/core/home.html:64
 msgid "Key information"
 msgstr "Infos clés"
 
-#: templates/core/home.html:64 templates/emails/order_tickets.html:25
+#: templates/core/home.html:76
+msgid "Dates"
+msgstr "Dates"
+
+#: templates/core/home.html:76 templates/emails/order_tickets.html:25
 #: templates/emails/order_tickets.txt:8
 msgid "Date"
 msgstr "Date"
 
-#: templates/core/home.html:69 templates/emails/order_tickets.html:26
-#: templates/emails/order_tickets.txt:9
-msgid "Doors · Show"
-msgstr "Portes · Show"
+#: templates/core/home.html:78
+#, python-format
+msgid "From %(time)s, every day"
+msgstr "Dès %(time)s, chaque jour"
 
-#: templates/core/home.html:80
-msgid "Tickets from"
-msgstr "Tickets à partir de"
+#: templates/core/home.html:78
+msgid "Doors"
+msgstr "Portes"
 
-#: templates/core/home.html:91
-msgid "Watch the teaser"
-msgstr "Regardez le teaser"
+#: templates/core/home.html:78
+msgid "Show"
+msgstr "Spectacle"
+
+#: templates/core/home.html:84
+#, python-format
+msgid "1 ticket = %(n)s days, one entry per day"
+msgstr "1 ticket = %(n)s jours, une entrée par jour"
+
+#: templates/core/home.html:84
+msgid "QR ticket on your phone"
+msgstr "Ticket QR sur votre téléphone"
+
+#: templates/core/home.html:96
+msgid "Choose your pass"
+msgstr "Choisis ton pass"
 
 #: templates/core/home.html:98
-msgid "Play the teaser video"
-msgstr "Lire la vidéo teaser"
-
-#: templates/core/home.html:106 templates/core/home.html:107
-msgid "Official poster"
-msgstr "Affiche officielle"
-
-#: templates/core/home.html:109
-msgid "Download the poster"
-msgstr "Télécharger l'affiche"
-
-#: templates/core/home.html:123
-msgid "Filter by category"
-msgstr "Filtrer par catégorie"
-
-#: templates/core/home.html:124
-msgid "All"
-msgstr "Tous"
-
-#: templates/core/home.html:136 templates/core/home.html:157
-msgid "Headliner"
-msgstr "Tête d'affiche"
-
-#: templates/core/home.html:137
-msgid "View artist"
-msgstr "Voir l'artiste"
-
-#: templates/core/home.html:181
 msgid "Show prices in"
 msgstr "Afficher les prix en"
 
-#: templates/core/home.html:186
-msgid ""
-"Online sales are paused for the moment. Check the physical outlets below."
+#: templates/core/home.html:103
+msgid "Online sales are paused for the moment. Call us to book."
 msgstr ""
-"Les ventes en ligne sont suspendues pour le moment. Consultez les points de "
-"vente ci-dessous."
+"La vente en ligne est suspendue pour le moment. Appelez-nous pour réserver."
 
-#: templates/core/home.html:194 templates/core/home.html:215
+#: templates/core/home.html:109 templates/core/home.html:127
 msgid "Sold out"
 msgstr "Épuisé"
 
-#: templates/core/home.html:196
+#: templates/core/home.html:110
 #, python-format
 msgid "Only %(left)s left"
 msgid_plural "Only %(left)s left"
 msgstr[0] "Plus que %(left)s place"
 msgstr[1] "Plus que %(left)s places"
 
-#: templates/core/home.html:210
-msgid "View my spot"
-msgstr "Voir ma place"
+#: templates/core/home.html:111 tickets/admin.py:105
+msgid "Available"
+msgstr "Disponibles"
 
-#: templates/core/home.html:213
-msgid "Select"
-msgstr "Choisir"
+#: templates/core/home.html:112
+#, python-format
+msgid "%(n)s days"
+msgstr "%(n)s jours"
 
-#: templates/core/home.html:215
+#: templates/core/home.html:117
+msgid "Not sold in Naira"
+msgstr "Pas vendu en naira"
+
+#: templates/core/home.html:118
+msgid "Naira only"
+msgstr "En naira uniquement"
+
+#: templates/core/home.html:125
+msgid "Buy"
+msgstr "Acheter"
+
+#: templates/core/home.html:127
 msgid "Not on sale"
 msgstr "Pas en vente"
 
-#: templates/core/home.html:220
+#: templates/core/home.html:130
+msgid "View my spot"
+msgstr "Voir ma place"
+
+#: templates/core/home.html:135
 msgid "Tickets will be available soon."
 msgstr "Les tickets seront bientôt disponibles."
 
-#: templates/core/home.html:226 templates/core/home.html:227
+#: templates/core/home.html:145
 msgid "Hall map"
 msgstr "Plan de la salle"
 
-#: templates/core/home.html:228
+#: templates/core/home.html:146
 msgid "Hall map with the position of each zone"
 msgstr "Plan de la salle avec l'emplacement de chaque zone"
 
-#: templates/core/home.html:230
+#: templates/core/home.html:148
 msgid "Tap the map to zoom."
 msgstr "Touchez le plan pour l'agrandir."
 
-#: templates/core/home.html:243 templates/emails/order_tickets.html:53
+#: templates/core/home.html:157
+msgid "How it works"
+msgstr "Comment ça marche"
+
+#: templates/core/home.html:158
+msgid "From click to entrance"
+msgstr "Du clic à l’entrée"
+
+#: templates/core/home.html:160
+msgid "Choose and pay"
+msgstr "Choisis et paie"
+
+#: templates/core/home.html:160
+msgid "Mobile Money, card or transfer, in a minute."
+msgstr "Mobile Money, carte ou virement, en une minute."
+
+#: templates/core/home.html:161
+msgid "Receive your ticket"
+msgstr "Reçois ton ticket"
+
+#: templates/core/home.html:161
+msgid ""
+"Your designed ticket with its QR code and number: on your phone and by "
+"e-mail."
+msgstr ""
+"Ton ticket avec son QR code et son numéro : sur ton téléphone et par e-mail."
+
+#: templates/core/home.html:162
+msgid "Show it at the entrance"
+msgstr "Présente-le à l’entrée"
+
+#: templates/core/home.html:162
+msgid "The QR code is scanned and you get your wristband."
+msgstr "Le QR code est scanné et tu reçois ton bracelet."
+
+#: templates/core/home.html:163
+#, python-format
+msgid "Enjoy the %(n)s days"
+msgstr "Profite des %(n)s jours"
+
+#: templates/core/home.html:163
+msgid "Enjoy the show"
+msgstr "Profite du spectacle"
+
+#: templates/core/home.html:163
+msgid "One entry per day with the same ticket."
+msgstr "Une entrée par jour avec le même ticket."
+
+#: templates/core/home.html:163
+msgid "One entry with your ticket."
+msgstr "Une entrée avec ton ticket."
+
+#: templates/core/home.html:173
+msgid "Who's on stage"
+msgstr "Sur scène"
+
+#: templates/core/home.html:183
+msgid "Headliner"
+msgstr "Tête d'affiche"
+
+#: templates/core/home.html:215
+msgid "Videos"
+msgstr "Vidéos"
+
+#: templates/core/home.html:220
+msgid "Play"
+msgstr "Lire"
+
+#: templates/core/home.html:234
+msgid "Play the teaser video"
+msgstr "Lire la vidéo teaser"
+
+#: templates/core/home.html:252
+msgid "For reservation & enquiries"
+msgstr "Réservations et renseignements"
+
+#: templates/core/home.html:260 templates/emails/order_tickets.html:53
 msgid "Get directions"
 msgstr "Itinéraire"
 
-#: templates/core/home.html:244 templates/tickets/order.html:28
+#: templates/core/home.html:261 templates/tickets/order.html:28
 msgid "Add to calendar"
 msgstr "Ajouter au calendrier"
 
-#: templates/core/home.html:248 templates/core/home.html:264
+#: templates/core/home.html:266 templates/core/home.html:285
 msgid "Map"
 msgstr "Carte"
 
-#: templates/core/home.html:255
+#: templates/core/home.html:273
 msgid "Buy in person"
 msgstr "Acheter sur place"
 
-#: templates/core/home.html:305 templates/core/home.html:309
+#: templates/core/home.html:300
+msgid "Your questions"
+msgstr "Vos questions"
+
+#: templates/core/home.html:316
+msgid "See you there?"
+msgstr "On s’y retrouve ?"
+
+#: templates/core/home.html:324 templates/core/home.html:328
 msgid "Close"
 msgstr "Fermer"
 
@@ -1496,11 +1906,15 @@ msgstr[1] ""
 
 #: templates/emails/order_tickets.html:24 templates/emails/order_tickets.txt:7
 #: templates/payments/feexpay_pay.html:11 templates/tickets/order.html:4
-#: templates/tickets/order.html:18 templates/tickets/order.html:77
-#: templates/tickets/order.html:106 templates/tickets/order_locked.html:4
-#: tickets/admin.py:426
+#: templates/tickets/order.html:18 templates/tickets/order.html:78
+#: templates/tickets/order.html:107 templates/tickets/order_locked.html:4
+#: tickets/admin.py:467 tickets/admin.py:646
 msgid "Order"
 msgstr "Commande"
+
+#: templates/emails/order_tickets.html:26 templates/emails/order_tickets.txt:9
+msgid "Doors · Show"
+msgstr "Portes · Show"
 
 #: templates/emails/order_tickets.html:28
 #: templates/emails/order_tickets.txt:11
@@ -1524,6 +1938,17 @@ msgstr "À l'entrée"
 
 #: templates/emails/order_tickets.html:46
 #: templates/emails/order_tickets.txt:18
+#, python-format
+msgid ""
+"Show the QR code on your phone (screen brightness up) or printed. Each QR "
+"code is valid for one entry per day (%(days)s). Do not share it."
+msgstr ""
+"Présentez le QR code sur votre téléphone (luminosité au maximum) ou imprimé."
+" Chaque QR code est valable pour une entrée par jour (%(days)s). Ne le "
+"partagez pas."
+
+#: templates/emails/order_tickets.html:46
+#: templates/emails/order_tickets.txt:18
 msgid ""
 "Show the QR code on your phone (screen brightness up) or printed. Each QR "
 "code is valid for one entry only. Do not share it."
@@ -1541,8 +1966,7 @@ msgstr "Informations pratiques"
 msgid "Questions?"
 msgstr "Des questions ?"
 
-#: templates/payments/feexpay_pay.html:4 templates/tickets/checkout.html:96
-#: tickets/admin.py:231
+#: templates/payments/feexpay_pay.html:4 tickets/admin.py:237
 msgid "Payment"
 msgstr "Paiement"
 
@@ -1567,92 +1991,158 @@ msgstr ""
 msgid "Bank card"
 msgstr "Carte bancaire"
 
-#: templates/scanner/login.html:10
+#: templates/scanner/install.html:3
+msgid "Install the scanner app"
+msgstr "Installer l’application scanner"
+
+#: templates/scanner/install.html:5
+msgid "Install on iPhone:"
+msgstr "Installer sur iPhone :"
+
+#: templates/scanner/install.html:6
+msgid "in Safari, tap Share"
+msgstr "dans Safari, touchez Partager"
+
+#: templates/scanner/install.html:6
+msgid "then “Add to Home Screen”."
+msgstr "puis « Sur l’écran d’accueil »."
+
+#: templates/scanner/login.html:15
 msgid "Scanner login"
 msgstr "Connexion scanner"
 
-#: templates/scanner/login.html:22
+#: templates/scanner/login.html:21
+msgid "Ticket scanner"
+msgstr "Scanner de tickets"
+
+#: templates/scanner/login.html:32
+msgid "Both are given by the organiser."
+msgstr "Les deux sont donnés par l’organisateur."
+
+#: templates/scanner/login.html:35
+msgid "Staff account (e-mail and password)"
+msgstr "Compte staff (e-mail et mot de passe)"
+
+#: templates/scanner/login.html:44
 msgid "Password"
 msgstr "Mot de passe"
 
-#: templates/scanner/login.html:24
+#: templates/scanner/login.html:46
 msgid "Log in"
 msgstr "Se connecter"
 
-#: templates/scanner/scan.html:26
+#: templates/scanner/login.html:48
+msgid "Use a login and access code"
+msgstr "Utiliser un identifiant et un code d’accès"
+
+#: templates/scanner/scan.html:21
+#, python-format
+msgid "Day %(n)s/%(total)s"
+msgstr "Jour %(n)s/%(total)s"
+
+#: templates/scanner/scan.html:21
+msgid "Today"
+msgstr "Aujourd’hui"
+
+#: templates/scanner/scan.html:21
+msgid "Not an event day"
+msgstr "Pas un jour de l’événement"
+
+#: templates/scanner/scan.html:27
 msgid "Log out"
 msgstr "Déconnexion"
 
 #: templates/scanner/scan.html:34
+#, python-format
+msgid ""
+"Tickets are only valid on the event days (%(days)s): they will be refused "
+"today."
+msgstr ""
+"Les tickets ne sont valables que les jours de l’événement (%(days)s) : ils "
+"seront refusés aujourd’hui."
+
+#: templates/scanner/scan.html:36
 msgid "No active event: every ticket will be refused."
 msgstr "Aucun événement actif : tous les tickets seront refusés."
 
-#: templates/scanner/scan.html:38
+#: templates/scanner/scan.html:40
 msgid "Starting camera…"
 msgstr "Démarrage de la caméra…"
 
-#: templates/scanner/scan.html:39
+#: templates/scanner/scan.html:41
 msgid "Start camera"
 msgstr "Démarrer la caméra"
 
-#: templates/scanner/scan.html:42
+#: templates/scanner/scan.html:44
 msgid "Manual entry"
 msgstr "Saisie manuelle"
 
-#: templates/scanner/scan.html:45
+#: templates/scanner/scan.html:47
 msgid "Check"
 msgstr "Vérifier"
 
-#: templates/scanner/scan.html:50
+#: templates/scanner/scan.html:54
 msgid "Last scans on this device"
 msgstr "Derniers scans sur cet appareil"
 
-#: templates/scanner/scan.html:67
+#: templates/scanner/scan.html:71
 msgid "VALID"
 msgstr "VALIDE"
 
-#: templates/scanner/scan.html:68
+#: templates/scanner/scan.html:72
 msgid "ALREADY USED"
 msgstr "DÉJÀ UTILISÉ"
 
-#: templates/scanner/scan.html:69
+#: templates/scanner/scan.html:73
 msgid "INVALID"
 msgstr "INVALIDE"
 
-#: templates/scanner/scan.html:70
+#: templates/scanner/scan.html:74
 msgid "CANCELLED"
 msgstr "ANNULÉ"
 
-#: templates/scanner/scan.html:71
+#: templates/scanner/scan.html:75
 msgid "WRONG EVENT"
 msgstr "MAUVAIS ÉVÉNEMENT"
 
-#: templates/scanner/scan.html:72
+#: templates/scanner/scan.html:76
 msgid "STAFF"
 msgstr "STAFF"
 
-#: templates/scanner/scan.html:73
+#: templates/scanner/scan.html:77
+msgid "NOT VALID TODAY"
+msgstr "PAS VALABLE AUJOURD’HUI"
+
+#: templates/scanner/scan.html:79
+msgid "already scanned today"
+msgstr "déjà scanné aujourd’hui"
+
+#: templates/scanner/scan.html:80
+msgid "Valid on:"
+msgstr "Valable le :"
+
+#: templates/scanner/scan.html:81
 msgid "First scan:"
 msgstr "Premier scan :"
 
-#: templates/scanner/scan.html:74
+#: templates/scanner/scan.html:82
 msgid "by"
 msgstr "par"
 
-#: templates/scanner/scan.html:75
+#: templates/scanner/scan.html:83
 msgid "Unknown or forged ticket"
 msgstr "Ticket inconnu ou falsifié"
 
-#: templates/scanner/scan.html:76
+#: templates/scanner/scan.html:84
 msgid "Network error — try again"
 msgstr "Erreur réseau — réessayez"
 
-#: templates/scanner/scan.html:77
+#: templates/scanner/scan.html:85
 msgid "Camera unavailable. Allow camera access or type the code."
 msgstr ""
 "Caméra indisponible. Autorisez l'accès à la caméra ou saisissez le code."
 
-#: templates/scanner/scan.html:78
+#: templates/scanner/scan.html:86
 msgid "Point the camera at the QR code"
 msgstr "Placez le QR code devant la caméra"
 
@@ -1664,72 +2154,63 @@ msgstr "Achat"
 msgid "Back to tickets"
 msgstr "Retour aux tickets"
 
-#: templates/tickets/checkout.html:23
+#: templates/tickets/checkout.html:19
+#, python-format
+msgid "1 ticket = %(n)s days"
+msgstr "1 ticket = %(n)s jours"
+
+#: templates/tickets/checkout.html:25
 msgid "This ticket is sold out."
 msgstr "Ce ticket est épuisé."
 
-#: templates/tickets/checkout.html:23 tickets/services.py:87
+#: templates/tickets/checkout.html:25 tickets/services.py:101
 msgid "This ticket is not on sale right now."
 msgstr "Ce ticket n'est pas en vente pour le moment."
 
-#: templates/tickets/checkout.html:25
+#: templates/tickets/checkout.html:27
 msgid "See other tickets"
 msgstr "Voir les autres tickets"
 
-#: templates/tickets/checkout.html:31 templates/tickets/checkout.html:127
+#: templates/tickets/checkout.html:34 templates/tickets/checkout.html:128
 msgid "Pay"
 msgstr "Payer"
 
-#: templates/tickets/checkout.html:31
+#: templates/tickets/checkout.html:34
 msgid "Processing…"
 msgstr "Traitement…"
 
-#: templates/tickets/checkout.html:32
-msgid "Holder name (optional)"
-msgstr "Nom du titulaire (facultatif)"
+#: templates/tickets/checkout.html:45
+msgid "Pay in"
+msgstr "Payer en"
 
-#: templates/tickets/checkout.html:41
-msgid "Country & currency"
-msgstr "Pays et devise"
+#: templates/tickets/checkout.html:61
+msgid "One less"
+msgstr "Un de moins"
 
-#: templates/tickets/checkout.html:57
-msgid "Your details"
-msgstr "Vos informations"
+#: templates/tickets/checkout.html:64
+msgid "One more"
+msgstr "Un de plus"
 
-#: templates/tickets/checkout.html:88
-#, python-format
-msgid "Up to %(n)s tickets per order. One QR code per person."
-msgstr "Jusqu'à %(n)s tickets par commande. Un QR code par personne."
+#: templates/tickets/checkout.html:94
+msgid "Names on the other tickets (optional)"
+msgstr "Noms sur les autres tickets (facultatif)"
 
-#: templates/tickets/checkout.html:108
+#: templates/tickets/checkout.html:100 tickets/forms.py:42
+msgid "Payment method"
+msgstr "Moyen de paiement"
+
+#: templates/tickets/checkout.html:112
 msgid ""
-"Online payment is not available for this country yet. Please use a physical "
-"outlet."
+"Online payment is not available for this currency yet. Call us to book."
 msgstr ""
-"Le paiement en ligne n'est pas encore disponible pour ce pays. Veuillez "
-"passer par un point de vente."
+"Le paiement en ligne n’est pas encore disponible dans cette devise. Appelez-"
+"nous pour réserver."
 
-#: templates/tickets/checkout.html:111
-msgid "Order summary"
-msgstr "Récapitulatif"
-
-#: templates/tickets/checkout.html:114 tickets/admin.py:311
-msgid "Quantity"
-msgstr "Quantité"
-
-#: templates/tickets/checkout.html:115
-msgid "Unit price"
-msgstr "Prix unitaire"
-
-#: templates/tickets/checkout.html:116
-msgid "Fees"
-msgstr "Frais"
-
-#: templates/tickets/checkout.html:117 tickets/admin.py:245
+#: templates/tickets/checkout.html:117 tickets/admin.py:251
 msgid "Total"
 msgstr "Total"
 
-#: templates/tickets/checkout.html:123
+#: templates/tickets/checkout.html:124
 #, python-format
 msgid ""
 "I accept the <a href=\"%(terms_url)s\" target=\"_blank\">terms and "
@@ -1738,13 +2219,13 @@ msgstr ""
 "J'accepte les <a href=\"%(terms_url)s\" target=\"_blank\">conditions "
 "générales</a>"
 
-#: templates/tickets/checkout.html:128
+#: templates/tickets/checkout.html:129
 msgid ""
-"Secure payment. Your ticket is issued as soon as the payment is confirmed, "
-"then downloaded to your phone and sent by e-mail."
+"Secure payment. Your ticket with its QR code is downloaded to your phone and"
+" sent by e-mail as soon as the payment is confirmed."
 msgstr ""
-"Paiement sécurisé. Votre ticket est émis dès la confirmation du paiement, "
-"puis téléchargé sur votre téléphone et envoyé par e-mail."
+"Paiement sécurisé. Votre ticket avec son QR code se télécharge sur votre "
+"téléphone et vous est envoyé par e-mail dès la confirmation du paiement."
 
 #: templates/tickets/find_ticket.html:14
 msgid "Order found"
@@ -1808,32 +2289,37 @@ msgstr "Mon ticket %(event)s :"
 msgid "Share on WhatsApp"
 msgstr "Partager sur WhatsApp"
 
-#: templates/tickets/order.html:42
+#: templates/tickets/order.html:41
+#, python-format
+msgid "valid %(days)s, one entry per day"
+msgstr "valable le %(days)s, une entrée par jour"
+
+#: templates/tickets/order.html:43
 msgid "Show the QR code for the entrance"
 msgstr "Afficher le QR code pour l'entrée"
 
-#: templates/tickets/order.html:60
+#: templates/tickets/order.html:61
 msgid "Press and hold the ticket, then tap “Save to Photos”."
 msgstr ""
 "Appuyez longuement sur le ticket, puis touchez « Enregistrer dans Photos »."
 
-#: templates/tickets/order.html:61
+#: templates/tickets/order.html:62
 msgid "Your ticket"
 msgstr "Votre ticket"
 
-#: templates/tickets/order.html:62
+#: templates/tickets/order.html:63
 msgid "Done"
 msgstr "Terminé"
 
-#: templates/tickets/order.html:66
+#: templates/tickets/order.html:67
 msgid "Keep your QR code visible on your phone at the entrance. Lost it?"
 msgstr "Gardez votre QR code visible sur votre téléphone à l'entrée. Perdu ?"
 
-#: templates/tickets/order.html:71
+#: templates/tickets/order.html:72
 msgid "Waiting for payment confirmation…"
 msgstr "En attente de la confirmation du paiement…"
 
-#: templates/tickets/order.html:73
+#: templates/tickets/order.html:74
 msgid ""
 "Approve the payment on your phone: you should receive a Mobile Money prompt."
 " Enter your PIN to confirm."
@@ -1841,43 +2327,43 @@ msgstr ""
 "Validez le paiement sur votre téléphone : vous allez recevoir une demande "
 "Mobile Money. Saisissez votre code pour confirmer."
 
-#: templates/tickets/order.html:75
+#: templates/tickets/order.html:76
 msgid "This page updates automatically. Please don't close it."
 msgstr "Cette page se met à jour automatiquement. Ne la fermez pas."
 
-#: templates/tickets/order.html:78
+#: templates/tickets/order.html:79
 #, python-format
 msgid "Your tickets are reserved until %(time)s."
 msgstr "Vos tickets sont réservés jusqu'à %(time)s."
 
-#: templates/tickets/order.html:83
+#: templates/tickets/order.html:84
 msgid "Payment not completed?"
 msgstr "Paiement non finalisé ?"
 
-#: templates/tickets/order.html:84
+#: templates/tickets/order.html:85
 msgid "Choose a payment method to try again:"
 msgstr "Choisissez un moyen de paiement pour réessayer :"
 
-#: templates/tickets/order.html:100
+#: templates/tickets/order.html:101
 msgid "Payment failed"
 msgstr "Échec du paiement"
 
-#: templates/tickets/order.html:101
+#: templates/tickets/order.html:102
 msgid "Your payment was not completed. No money was taken for this order."
 msgstr ""
 "Votre paiement n'a pas abouti. Aucun montant n'a été prélevé pour cette "
 "commande."
 
-#: templates/tickets/order.html:103
+#: templates/tickets/order.html:104
 msgid "Order cancelled"
 msgstr "Commande annulée"
 
-#: templates/tickets/order.html:104
+#: templates/tickets/order.html:105
 msgid "This order was cancelled or the 15-minute reservation expired."
 msgstr ""
 "Cette commande a été annulée ou la réservation de 15 minutes a expiré."
 
-#: templates/tickets/order.html:108 templates/tickets/order.html:110
+#: templates/tickets/order.html:109 templates/tickets/order.html:111
 msgid "Try again"
 msgstr "Réessayer"
 
@@ -1893,237 +2379,320 @@ msgstr ""
 "Pour votre sécurité, les tickets ne s'affichent que sur l'appareil utilisé "
 "pour l'achat ou via le lien envoyé par e-mail."
 
-#: tickets/admin.py:76
-msgid "Prices"
-msgstr "Prix"
-
-#: tickets/admin.py:77
+#: tickets/admin.py:82
 msgid "Stock"
 msgstr "Stock"
 
-#: tickets/admin.py:79
+#: tickets/admin.py:84
 msgid "Spot in the hall"
 msgstr "Place dans la salle"
 
-#: tickets/admin.py:80
+#: tickets/admin.py:85
 msgid "Ticket design"
 msgstr "Design du ticket"
 
-#: tickets/admin.py:81
+#: tickets/admin.py:86
 msgid ""
-"Upload your ticket artwork (2400 × 900 px). The system adds the QR code, the"
-" ticket code and the holder automatically. Save to refresh the preview."
+"Upload one copy of your ticket design for this type. On every ticket (online"
+" and printed) the system adds the QR code, the ticket code and its number "
+"(No. 00042), valid for each day of the event. Choose where the QR goes, then"
+" save to refresh the preview."
 msgstr ""
-"Importez votre visuel de ticket (2400 × 900 px). Le système ajoute "
-"automatiquement le QR code, le code du ticket et le titulaire. Enregistrez "
-"pour mettre à jour l'aperçu."
+"Importez un exemplaire de votre design de ticket pour ce type. Sur chaque "
+"ticket (en ligne et imprimé), le système ajoute le QR code, le code du "
+"ticket et son numéro (N° 00042), valable chaque jour de l’événement. "
+"Choisissez l’emplacement du QR puis enregistrez pour mettre à jour l’aperçu."
 
-#: tickets/admin.py:87
+#: tickets/admin.py:93
 msgid "Price XOF"
 msgstr "Prix XOF"
 
-#: tickets/admin.py:91
+#: tickets/admin.py:97
 msgid "Price NGN"
 msgstr "Prix NGN"
 
-#: tickets/admin.py:95
+#: tickets/admin.py:101
 msgid "Sold / capacity"
 msgstr "Vendus / capacité"
 
-#: tickets/admin.py:99
-msgid "Available"
-msgstr "Disponibles"
-
-#: tickets/admin.py:103
+#: tickets/admin.py:109
 msgid "Preview"
 msgstr "Aperçu"
 
-#: tickets/admin.py:107
+#: tickets/admin.py:113
 msgid "Ticket preview"
 msgstr "Aperçu du ticket"
 
-#: tickets/admin.py:110
+#: tickets/admin.py:116
 msgid "Save first to see the preview."
 msgstr "Enregistrez d'abord pour voir l'aperçu."
 
-#: tickets/admin.py:118
+#: tickets/admin.py:124
 msgid "Recount sold / reserved from orders"
 msgstr "Recalculer vendus / réservés depuis les commandes"
 
-#: tickets/admin.py:122
+#: tickets/admin.py:128
 msgid "Stock counters rebuilt."
 msgstr "Compteurs de stock recalculés."
 
-#: tickets/admin.py:149
+#: tickets/admin.py:155
 msgid "Code"
 msgstr "Code"
 
-#: tickets/admin.py:181
+#: tickets/admin.py:187
 msgid "Export CSV"
 msgstr "Exporter en CSV"
 
-#: tickets/admin.py:191
+#: tickets/admin.py:197
 msgid "Export Excel"
 msgstr "Exporter en Excel"
 
-#: tickets/admin.py:229
+#: tickets/admin.py:235
 msgid "Buyer"
 msgstr "Acheteur"
 
-#: tickets/admin.py:232
+#: tickets/admin.py:238
 msgid "Notes"
 msgstr "Notes"
 
-#: tickets/admin.py:241 tickets/admin.py:422
+#: tickets/admin.py:247 tickets/admin.py:463 tickets/admin.py:635
 msgid "Status"
 msgstr "Statut"
 
-#: tickets/admin.py:253
+#: tickets/admin.py:259
 msgid "Buyer link"
 msgstr "Lien acheteur"
 
-#: tickets/admin.py:258
+#: tickets/admin.py:264
 msgid "Open the buyer's ticket page"
 msgstr "Ouvrir la page tickets de l'acheteur"
 
-#: tickets/admin.py:261
+#: tickets/admin.py:267
 msgid "Resend tickets by e-mail"
 msgstr "Renvoyer les tickets par e-mail"
 
-#: tickets/admin.py:267
+#: tickets/admin.py:273
 #, python-format
 msgid "%(count)s order(s) queued for e-mail."
 msgstr "%(count)s commande(s) en file d'envoi par e-mail."
 
-#: tickets/admin.py:269 tickets/admin.py:293
+#: tickets/admin.py:275 tickets/admin.py:299
 msgid "Mark as paid (manual)"
 msgstr "Marquer comme payée (manuel)"
 
-#: tickets/admin.py:275
+#: tickets/admin.py:281
 #, python-format
 msgid "%(count)s order(s) marked as paid — tickets issued."
 msgstr "%(count)s commande(s) marquée(s) comme payée(s) — tickets émis."
 
-#: tickets/admin.py:277
+#: tickets/admin.py:283
 msgid "Cancel"
 msgstr "Annuler"
 
-#: tickets/admin.py:280
+#: tickets/admin.py:286
 #, python-format
 msgid "%(count)s order(s) cancelled."
 msgstr "%(count)s commande(s) annulée(s)."
 
-#: tickets/admin.py:283
+#: tickets/admin.py:289
 msgid "Resend tickets"
 msgstr "Renvoyer les tickets"
 
-#: tickets/admin.py:288
+#: tickets/admin.py:294
 #, python-format
 msgid "Tickets sent again to %(email)s."
 msgstr "Tickets renvoyés à %(email)s."
 
-#: tickets/admin.py:290
+#: tickets/admin.py:296
 msgid "Only paid orders have tickets."
 msgstr "Seules les commandes payées ont des tickets."
 
-#: tickets/admin.py:297
+#: tickets/admin.py:303
 #, python-format
 msgid "This order is already %(status)s."
 msgstr "Cette commande est déjà : %(status)s."
 
-#: tickets/admin.py:300
+#: tickets/admin.py:306
 msgid "Order marked as paid — tickets issued and e-mailed."
 msgstr "Commande marquée comme payée — tickets émis et envoyés par e-mail."
 
-#: tickets/admin.py:309
+#: tickets/admin.py:315
 msgid "Ticket type"
 msgstr "Catégorie de ticket"
 
-#: tickets/admin.py:313
+#: tickets/admin.py:317
+msgid "Quantity"
+msgstr "Quantité"
+
+#: tickets/admin.py:319
 msgid "Holder names"
 msgstr "Noms des titulaires"
 
-#: tickets/admin.py:314
+#: tickets/admin.py:320
 msgid "Optional, comma-separated (one per ticket). Empty = guest name."
 msgstr ""
 "Facultatif, séparés par des virgules (un par ticket). Vide = nom de "
 "l'invité."
 
-#: tickets/admin.py:316
+#: tickets/admin.py:322
 msgid "Holder photo"
 msgstr "Photo du titulaire"
 
-#: tickets/admin.py:316
+#: tickets/admin.py:322
 msgid "Optional, used on the first ticket."
 msgstr "Facultative, utilisée sur le premier ticket."
 
-#: tickets/admin.py:321
+#: tickets/admin.py:327
 msgid "Guest name"
 msgstr "Nom de l'invité"
 
-#: tickets/admin.py:321
+#: tickets/admin.py:327
 msgid "Send tickets to (e-mail)"
 msgstr "Envoyer les tickets à (e-mail)"
 
-#: tickets/admin.py:331 tickets/services.py:90 tickets/services.py:260
+#: tickets/admin.py:337 tickets/admin.py:567 tickets/services.py:104
+#: tickets/services.py:277 tickets/services.py:322
 #, python-format
 msgid "Only %(count)s ticket(s) left in this category."
 msgstr "Plus que %(count)s ticket(s) dans cette catégorie."
 
-#: tickets/admin.py:388
+#: tickets/admin.py:394
 #, python-format
 msgid "Complimentary tickets issued and e-mailed to %(email)s."
 msgstr "Invitations émises et envoyées à %(email)s."
 
-#: tickets/admin.py:412
+#: tickets/admin.py:410
+msgid "Entries (one per day)"
+msgstr "Entrées (une par jour)"
+
+#: tickets/admin.py:435
 msgid "QR code & files"
 msgstr "QR code et fichiers"
 
-#: tickets/admin.py:413
-msgid "Entrance"
-msgstr "Entrée"
-
-#: tickets/admin.py:444
+#: tickets/admin.py:485
 msgid "Download"
 msgstr "Télécharger"
 
-#: tickets/admin.py:458 tickets/admin.py:481
+#: tickets/admin.py:499 tickets/admin.py:534
 msgid "Ticket files regenerated."
 msgstr "Fichiers du ticket régénérés."
 
-#: tickets/admin.py:460
+#: tickets/admin.py:501
 msgid "Regenerate ticket files"
 msgstr "Régénérer les fichiers des tickets"
 
-#: tickets/admin.py:464
+#: tickets/admin.py:505
 msgid "Regeneration queued."
 msgstr "Régénération lancée."
 
-#: tickets/admin.py:466
+#: tickets/admin.py:507
 msgid "Cancel tickets"
 msgstr "Annuler les tickets"
 
-#: tickets/admin.py:469
+#: tickets/admin.py:510
 #, python-format
 msgid "%(count)s ticket(s) cancelled."
 msgstr "%(count)s ticket(s) annulé(s)."
 
-#: tickets/admin.py:471 tickets/admin.py:484
+#: tickets/admin.py:512
+msgid "Print the selected tickets (A4, 4 per page)"
+msgstr "Imprimer les tickets sélectionnés (A4, 4 par page)"
+
+#: tickets/admin.py:516
+msgid "No valid ticket selected."
+msgstr "Aucun ticket valide sélectionné."
+
+#: tickets/admin.py:519
+msgid "Select tickets of one ticket type at a time (one design per PDF)."
+msgstr ""
+"Sélectionnez les tickets d’un seul type à la fois (un design par PDF)."
+
+#: tickets/admin.py:525 tickets/admin.py:537
 msgid "Reset check-in"
 msgstr "Réinitialiser l'entrée"
 
-#: tickets/admin.py:476
+#: tickets/admin.py:529
 #, python-format
 msgid "%(count)s check-in(s) reset."
 msgstr "%(count)s entrée(s) réinitialisée(s)."
 
-#: tickets/admin.py:478
+#: tickets/admin.py:531
 msgid "Regenerate files"
 msgstr "Régénérer les fichiers"
 
-#: tickets/admin.py:489
+#: tickets/admin.py:541
 msgid "Check-in reset."
 msgstr "Entrée réinitialisée."
+
+#: tickets/admin.py:559
+#, python-format
+msgid "1 to %(max)s. Each ticket gets its own QR code, code and number."
+msgstr ""
+"De 1 à %(max)s. Chaque ticket reçoit son propre QR code, son code et son "
+"numéro."
+
+#: tickets/admin.py:584
+msgid ""
+"The system creates the tickets (QR code, code and number for each one, valid"
+" for every day of the event), then the PDF to print: choose A4 and 4 or 5 "
+"tickets per page."
+msgstr ""
+"Le système crée les tickets (QR code, code et numéro pour chacun, valables "
+"chaque jour de l’événement), puis le PDF à imprimer : choisissez A4 et 4 ou "
+"5 tickets par page."
+
+#: tickets/admin.py:590
+msgid "PDF format"
+msgstr "Format du PDF"
+
+#: tickets/admin.py:591
+msgid "Change the format and save: the PDF is generated again."
+msgstr "Changez le format et enregistrez : le PDF est généré à nouveau."
+
+#: tickets/admin.py:594
+msgid "Details"
+msgstr "Détails"
+
+#: tickets/admin.py:620
+#, python-format
+msgid ""
+"%(count)s tickets created (numbers %(range)s). The PDF is being generated."
+msgstr ""
+"%(count)s tickets créés (numéros %(range)s). Le PDF est en cours de "
+"génération."
+
+#: tickets/admin.py:625
+msgid "Numbers"
+msgstr "Numéros"
+
+#: tickets/admin.py:629
+msgid "Format"
+msgstr "Format"
+
+#: tickets/admin.py:632
+#, python-format
+msgid "A4 · %(n)s per page"
+msgstr "A4 · %(n)s par page"
+
+#: tickets/admin.py:633
+msgid "Ticket size"
+msgstr "Taille ticket"
+
+#: tickets/admin.py:639
+msgid "PDF"
+msgstr "PDF"
+
+#: tickets/admin.py:644 tickets/admin.py:652
+msgid "Download the PDF"
+msgstr "Télécharger le PDF"
+
+#: tickets/admin.py:660
+msgid "Generate the PDF again"
+msgstr "Générer à nouveau le PDF"
+
+#: tickets/admin.py:663
+msgid "The PDF is being generated."
+msgstr "Le PDF est en cours de génération."
 
 #: tickets/apps.py:8
 msgid "Ticketing"
@@ -2153,10 +2722,6 @@ msgstr "Téléphone"
 #: tickets/forms.py:40
 msgid "Number of tickets"
 msgstr "Nombre de tickets"
-
-#: tickets/forms.py:42
-msgid "Payment method"
-msgstr "Moyen de paiement"
 
 #: tickets/forms.py:47
 msgid "I accept the terms and conditions"
@@ -2244,306 +2809,382 @@ msgstr "design du ticket"
 
 #: tickets/models.py:41
 msgid ""
-"Landscape ticket artwork, 2400 × 900 px (8:3). Keep the right part (stub) "
-"free for the QR code. Empty = automatic design."
+"Your own ticket artwork (one per ticket type), e.g. 2400 × 900 px. It keeps "
+"its proportions. Leave a free area for the QR code: the system adds the QR "
+"code, the ticket code and the number. Empty = automatic design in the poster"
+" style."
 msgstr ""
-"Visuel du ticket en paysage, 2400 × 900 px (8:3). Laissez la partie droite "
-"(talon) libre pour le QR code. Vide = design automatique."
+"Votre propre design de ticket (un par type), ex. 2400 × 900 px. Ses "
+"proportions sont conservées. Laissez une zone libre pour le QR code : le "
+"système ajoute le QR code, le code du ticket et le numéro. Vide = design "
+"automatique au style de l’affiche."
 
-#: tickets/models.py:45
+#: tickets/models.py:46
 msgid "QR position — horizontal (%)"
 msgstr "Position du QR — horizontale (%)"
 
-#: tickets/models.py:46
+#: tickets/models.py:47
 msgid "Centre of the QR code from the left edge: 0 = left, 100 = right."
 msgstr "Centre du QR code depuis le bord gauche : 0 = gauche, 100 = droite."
 
-#: tickets/models.py:49
+#: tickets/models.py:50
 msgid "QR position — vertical (%)"
 msgstr "Position du QR — verticale (%)"
 
-#: tickets/models.py:50
+#: tickets/models.py:51
 msgid "Centre of the QR code from the top edge: 0 = top, 100 = bottom."
 msgstr "Centre du QR code depuis le haut : 0 = haut, 100 = bas."
 
-#: tickets/models.py:53
+#: tickets/models.py:54
 #, python-format
 msgid "QR size (% of the height)"
 msgstr "Taille du QR (% de la hauteur)"
 
-#: tickets/models.py:56
+#: tickets/models.py:55
+msgid "Of the shorter side of the design."
+msgstr "Du plus petit côté du design."
+
+#: tickets/models.py:58
 msgid "holder name & photo"
 msgstr "nom et photo du titulaire"
 
-#: tickets/models.py:57
+#: tickets/models.py:59
 msgid "Bottom left"
 msgstr "En bas à gauche"
 
-#: tickets/models.py:57
+#: tickets/models.py:59
 msgid "Top left"
 msgstr "En haut à gauche"
 
-#: tickets/models.py:57
+#: tickets/models.py:59
 msgid "Hidden"
 msgstr "Masqué"
 
-#: tickets/models.py:58
+#: tickets/models.py:60
 msgid "Where the system writes the holder's photo and name on your design."
 msgstr "Où le système place la photo et le nom du titulaire sur votre visuel."
 
-#: tickets/models.py:62 tickets/models.py:100 tickets/models.py:197
-#: tickets/models.py:220
+#: tickets/models.py:64 tickets/models.py:102 tickets/models.py:199
+#: tickets/models.py:222 tickets/models.py:286
 msgid "ticket type"
 msgstr "catégorie de ticket"
 
-#: tickets/models.py:63
+#: tickets/models.py:65
 msgid "ticket types"
 msgstr "catégories de tickets"
 
-#: tickets/models.py:101
+#: tickets/models.py:103
 msgid "text (EN)"
 msgstr "texte (EN)"
 
-#: tickets/models.py:102
+#: tickets/models.py:104
 msgid "text (FR)"
 msgstr "texte (FR)"
 
-#: tickets/models.py:106
+#: tickets/models.py:108
 msgid "benefit"
 msgstr "avantage"
 
-#: tickets/models.py:107
+#: tickets/models.py:109
 msgid "benefits"
 msgstr "avantages"
 
-#: tickets/models.py:116
+#: tickets/models.py:118
 msgid "Pending"
 msgstr "En attente"
 
-#: tickets/models.py:117
+#: tickets/models.py:119
 msgid "Paid"
 msgstr "Payée"
 
-#: tickets/models.py:118
+#: tickets/models.py:120 tickets/models.py:276
 msgid "Failed"
 msgstr "Échouée"
 
-#: tickets/models.py:120
+#: tickets/models.py:122
 msgid "Refunded"
 msgstr "Remboursée"
 
-#: tickets/models.py:123
+#: tickets/models.py:125
 msgid "Reserved"
 msgstr "Réservé"
 
-#: tickets/models.py:125
+#: tickets/models.py:127
 msgid "Released"
 msgstr "Libéré"
 
-#: tickets/models.py:127
+#: tickets/models.py:129
 msgid "reference"
 msgstr "référence"
 
-#: tickets/models.py:129
+#: tickets/models.py:131
 msgid "buyer name"
 msgstr "nom de l'acheteur"
 
-#: tickets/models.py:130
+#: tickets/models.py:132
 msgid "buyer e-mail"
 msgstr "e-mail de l'acheteur"
 
-#: tickets/models.py:131
+#: tickets/models.py:133
 msgid "buyer phone"
 msgstr "téléphone de l'acheteur"
 
-#: tickets/models.py:134
+#: tickets/models.py:136
 msgid "subtotal"
 msgstr "sous-total"
 
-#: tickets/models.py:135
+#: tickets/models.py:137
 msgid "fees"
 msgstr "frais"
 
-#: tickets/models.py:136
+#: tickets/models.py:138
 msgid "total"
 msgstr "total"
 
-#: tickets/models.py:137 tickets/models.py:229
+#: tickets/models.py:139 tickets/models.py:235 tickets/models.py:303
 msgid "status"
 msgstr "statut"
 
-#: tickets/models.py:138
+#: tickets/models.py:140
 msgid "stock"
 msgstr "stock"
 
-#: tickets/models.py:143
+#: tickets/models.py:145
 msgid "gateway transaction ID"
 msgstr "ID de transaction passerelle"
 
-#: tickets/models.py:144
+#: tickets/models.py:146
 msgid "gateway payload"
 msgstr "données passerelle"
 
-#: tickets/models.py:145
+#: tickets/models.py:147
 msgid "ticket holders"
 msgstr "titulaires des tickets"
 
-#: tickets/models.py:146
+#: tickets/models.py:148
 msgid "reserved until"
 msgstr "réservé jusqu'à"
 
-#: tickets/models.py:147
+#: tickets/models.py:149
 msgid "language"
 msgstr "langue"
 
-#: tickets/models.py:149
+#: tickets/models.py:151
 msgid "internal note"
 msgstr "note interne"
 
-#: tickets/models.py:150
+#: tickets/models.py:152
 msgid "IP address"
 msgstr "adresse IP"
 
-#: tickets/models.py:154
+#: tickets/models.py:156
 msgid "paid at"
 msgstr "payé le"
 
-#: tickets/models.py:159
+#: tickets/models.py:161
 msgid "orders"
 msgstr "commandes"
 
-#: tickets/models.py:191
+#: tickets/models.py:193
 msgid "complimentary ticket"
 msgstr "invitation"
 
-#: tickets/models.py:192
+#: tickets/models.py:194
 msgid "complimentary tickets"
 msgstr "invitations"
 
-#: tickets/models.py:198
+#: tickets/models.py:200
 msgid "quantity"
 msgstr "quantité"
 
-#: tickets/models.py:199
+#: tickets/models.py:201
 msgid "unit price"
 msgstr "prix unitaire"
 
-#: tickets/models.py:202
+#: tickets/models.py:204
 msgid "order item"
 msgstr "ligne de commande"
 
-#: tickets/models.py:203
+#: tickets/models.py:205
 msgid "order items"
 msgstr "lignes de commande"
 
-#: tickets/models.py:215
+#: tickets/models.py:217
 msgid "Valid"
 msgstr "Valide"
 
-#: tickets/models.py:216
+#: tickets/models.py:218
 msgid "Used"
 msgstr "Utilisé"
 
-#: tickets/models.py:223
+#: tickets/models.py:226
+msgid "serial number"
+msgstr "numéro de série"
+
+#: tickets/models.py:227
+msgid "Sequential number within the event, printed on the ticket."
+msgstr "Numéro qui se suit dans l’événement, imprimé sur le ticket."
+
+#: tickets/models.py:229
 msgid "holder name"
 msgstr "nom du titulaire"
 
-#: tickets/models.py:224
+#: tickets/models.py:230
 msgid "holder photo"
 msgstr "photo du titulaire"
 
-#: tickets/models.py:230
+#: tickets/models.py:236
 msgid "checked in at"
 msgstr "entré le"
 
-#: tickets/models.py:233
+#: tickets/models.py:239
 msgid "checked in by"
 msgstr "contrôlé par"
 
-#: tickets/models.py:235
+#: tickets/models.py:241
 msgid "e-mail sent at"
 msgstr "e-mail envoyé le"
 
-#: tickets/models.py:236
+#: tickets/models.py:242
 msgid "downloads"
 msgstr "téléchargements"
 
-#: tickets/models.py:241
+#: tickets/models.py:247
 msgid "tickets"
 msgstr "tickets"
 
-#: tickets/render.py:250
+#: tickets/models.py:274
+msgid "Generating"
+msgstr "En cours de génération"
+
+#: tickets/models.py:279
+msgid "A4 sheets (several tickets per page, crop marks)"
+msgstr "Feuilles A4 (plusieurs tickets par page, traits de coupe)"
+
+#: tickets/models.py:280
+msgid "Ticket size (one ticket per page)"
+msgstr "Taille ticket (un ticket par page)"
+
+#: tickets/models.py:288
+msgid "number of tickets"
+msgstr "nombre de tickets"
+
+#: tickets/models.py:292
+msgid "sold at"
+msgstr "vendus à"
+
+#: tickets/models.py:295
+msgid "paper format"
+msgstr "format papier"
+
+#: tickets/models.py:297
+msgid "tickets per A4 page"
+msgstr "tickets par page A4"
+
+#: tickets/models.py:298
+msgid "4 or 5 for long tickets; the tickets are as large as the page allows."
+msgstr ""
+"4 ou 5 pour des tickets longs ; les tickets sont aussi grands que la page le"
+" permet."
+
+#: tickets/models.py:301
+msgid "first number"
+msgstr "premier numéro"
+
+#: tickets/models.py:302
+msgid "last number"
+msgstr "dernier numéro"
+
+#: tickets/models.py:307
+msgid "created by"
+msgstr "créé par"
+
+#: tickets/models.py:312
+msgid "print batch"
+msgstr "lot d’impression"
+
+#: tickets/models.py:313
+msgid "print batches"
+msgstr "lots d’impression"
+
+#: tickets/render.py:374
+msgid "1 ENTRY PER DAY"
+msgstr "1 ENTRÉE PAR JOUR"
+
+#: tickets/render.py:383
+#, python-format
+msgid "DAY %(n)s"
+msgstr "JOUR %(n)s"
+
+#: tickets/render.py:383
+msgid "ENTRY"
+msgstr "ENTRÉE"
+
+#: tickets/render.py:393
 msgid "ADMIT ONE"
 msgstr "ENTRÉE UNIQUE"
 
-#: tickets/render.py:256
-msgid "Non transferable — 1 entry only"
-msgstr "Nominatif — 1 seule entrée"
+#: tickets/render.py:417
+msgid "PRESENTS"
+msgstr "PRÉSENTENT"
 
-#: tickets/render.py:296
-msgid "TICKET HOLDER"
+#: tickets/render.py:434
+#, python-format
+msgid "[ %(days)s DAYS EVENT ]"
+msgstr "[ ÉVÉNEMENT DE %(days)s JOURS ]"
+
+#: tickets/render.py:444
+msgid "DAILY"
+msgstr "CHAQUE JOUR"
+
+#: tickets/render.py:457
+msgid "TICKET"
+msgstr "TICKET"
+
+#: tickets/render.py:470
+msgid "HOLDER"
 msgstr "TITULAIRE"
 
-#: tickets/render.py:307
-msgid "DATE"
-msgstr "DATE"
+#: tickets/render.py:476
+#, python-format
+msgid "1 TICKET COVERS %(days)s DAYS"
+msgstr "1 TICKET POUR %(days)s JOURS"
 
-#: tickets/render.py:309
-msgid "DOORS · SHOW"
-msgstr "PORTES · SHOW"
+#: tickets/render.py:476
+msgid "One entry per day"
+msgstr "Une entrée par jour"
 
-#: tickets/render.py:313
-msgid "VENUE"
-msgstr "LIEU"
+#: tickets/render.py:478
+msgid "VALID FOR ONE ENTRY"
+msgstr "VALABLE POUR UNE ENTRÉE"
 
-#: tickets/services.py:79
+#: tickets/render.py:478
+msgid "Keep your QR code private"
+msgstr "Gardez votre QR code privé"
+
+#: tickets/services.py:93
 msgid "Please choose at least one ticket."
 msgstr "Veuillez choisir au moins un ticket."
 
-#: tickets/services.py:94
+#: tickets/services.py:108
 #, python-format
 msgid "This ticket is not sold in %(currency)s."
 msgstr "Ce ticket n'est pas vendu en %(currency)s."
 
-#: tickets/views.py:66
+#: tickets/services.py:318
+#, python-format
+msgid "Choose between 1 and %(max)s tickets."
+msgstr "Choisissez entre 1 et %(max)s tickets."
+
+#: tickets/views.py:68
 msgid "Too many attempts. Please wait a few minutes and try again."
 msgstr "Trop de tentatives. Patientez quelques minutes et réessayez."
 
-#: tickets/views.py:218
+#: tickets/views.py:221
 msgid "Too many attempts. Please try again in an hour."
 msgstr "Trop de tentatives. Réessayez dans une heure."
 
-#: tickets/views.py:232
+#: tickets/views.py:235
 msgid "No paid order matches these details. Check the e-mail and reference."
 msgstr ""
 "Aucune commande payée ne correspond. Vérifiez l'e-mail et la référence."
-
-#~ msgid "INCLUDED"
-#~ msgstr "INCLUS"
-
-#~ msgid "Please choose a JPG, PNG or WebP image."
-#~ msgstr "Veuillez choisir une image JPG, PNG ou WebP."
-
-#~ msgid "The photo is too large (max 5 MB)."
-#~ msgstr "La photo est trop lourde (max. 5 Mo)."
-
-#~ msgid "optional"
-#~ msgstr "facultatif"
-
-#~ msgid "Ticket holder photo"
-#~ msgstr "Photo du titulaire"
-
-#~ msgid ""
-#~ "Shown on your ticket and checked at the entrance. JPG, PNG or WebP, max 5 "
-#~ "MB."
-#~ msgstr ""
-#~ "Affichée sur votre ticket et vérifiée à l'entrée. JPG, PNG ou WebP, max. 5 "
-#~ "Mo."
-
-#, python-format
-#~ msgid "Ticket %(n)s: %(error)s"
-#~ msgstr "Ticket %(n)s : %(error)s"
-
-#, python-format
-#~ msgid "Ticket %(n)s: a holder photo is required."
-#~ msgstr "Ticket %(n)s : une photo du titulaire est obligatoire."

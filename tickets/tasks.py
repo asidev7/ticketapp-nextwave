@@ -35,6 +35,14 @@ def regenerate_ticket_files(ticket_id: int) -> None:
     ensure_order_pdf(ticket.order_id, force=True)
 
 
+@shared_task(autoretry_for=(Exception,), retry_backoff=30, max_retries=2)
+def build_print_batch(batch_id: int) -> None:
+    """Print PDFs of a batch: A4 sheets (4 tickets per page) and ticket-size pages."""
+    from .printing import build_batch_files
+
+    build_batch_files(batch_id)
+
+
 @shared_task
 def release_expired_orders_task() -> int:
     from .services import release_expired_orders

@@ -1,0 +1,8 @@
+{% load i18n %}{# "Install the app" — Android/desktop: native prompt; iPhone: Share → Add to Home Screen. Hidden once installed. #}
+<div class="install" data-install hidden>
+  <button type="button" class="btn btn-gold btn-block" data-install-button hidden>{% translate "Install the scanner app" %}</button>
+  <p class="install__ios" data-install-ios hidden>
+    <strong>{% translate "Install on iPhone:" %}</strong>
+    {% translate "in Safari, tap Share" %} <span aria-hidden="true">⬆︎</span> {% translate "then “Add to Home Screen”." %}
+  </p>
+</div>

@@ -1,0 +1,6 @@
+Fonts bundled for the website and the generated tickets/cards (subset to Latin):
+
+- Anton — Copyright 2020 The Anton Project Authors (https://github.com/googlefonts/AntonFont)
+- Montserrat — Copyright 2011 The Montserrat Project Authors (https://github.com/JulietaUla/Montserrat)
+
+Both are licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org

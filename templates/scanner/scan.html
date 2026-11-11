@@ -3,21 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0A3D91">
+  <meta name="theme-color" content="#C8102E">
+  <meta name="robots" content="noindex">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="NWP Scan">
-  <meta name="robots" content="noindex">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NW Scan">
   <link rel="manifest" href="{% url 'scanner:manifest' %}">
-  <link rel="icon" type="image/png" href="{% static 'img/icon-192.png' %}">
-  <link rel="apple-touch-icon" href="{% static 'img/icon-192.png' %}">
+  <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
   <title>NextWave Scanner</title>
   <link rel="stylesheet" href="{% static 'css/scanner.css' %}">
 </head>
 <body>
   <header class="scan-top">
     <p class="counter">
-      <span>{% translate "Checked-in" %}</span>
+      <span class="counter__day">{% if counts.day %}{% if counts.days > 1 %}{% blocktranslate with n=counts.day total=counts.days %}Day {{ n }}/{{ total }}{% endblocktranslate %}{% else %}{% translate "Today" %}{% endif %}{% else %}{% translate "Not an event day" %}{% endif %}</span>
       <strong data-checked>{{ counts.checked_in|num }}</strong>
       <span>/ <span data-total>{{ counts.total|num }}</span></span>
     </p>
@@ -29,7 +30,8 @@
 
   <main class="scan-main">
     {% if event %}
-      <p class="event-name">{{ event.name }} · {{ event.edition }}</p>
+      <p class="event-name">{{ event.name }} · {{ event.dates_label }}<br><small>{% translate "Scanner" %}: {{ agent }}</small></p>
+      {% if not counts.day %}<p class="warn">{% blocktranslate with days=event.dates_label %}Tickets are only valid on the event days ({{ days }}): they will be refused today.{% endblocktranslate %}</p>{% endif %}
     {% else %}
       <p class="warn">{% translate "No active event: every ticket will be refused." %}</p>
     {% endif %}
@@ -45,6 +47,8 @@
         <button type="submit" class="btn">{% translate "Check" %}</button>
       </div>
     </form>
+
+    {% include "scanner/install.html" %}
 
     <section class="history">
       <h2>{% translate "Last scans on this device" %}</h2>
@@ -70,6 +74,10 @@
        data-l-cancelled="{% translate 'CANCELLED' %}"
        data-l-wrong_event="{% translate 'WRONG EVENT' %}"
        data-l-staff="{% translate 'STAFF' %}"
+       data-l-wrong_day="{% translate 'NOT VALID TODAY' %}"
+       data-l-day="{% translate 'Day' %}"
+       data-l-today="{% translate 'already scanned today' %}"
+       data-l-valid-days="{% translate 'Valid on:' %}"
        data-l-first-scan="{% translate 'First scan:' %}"
        data-l-by="{% translate 'by' %}"
        data-l-unknown="{% translate 'Unknown or forged ticket' %}"
@@ -78,6 +86,7 @@
        data-l-scanning="{% translate 'Point the camera at the QR code' %}"></div>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+  <script src="{% static 'js/pwa.js' %}" data-sw="{% url 'scanner:sw' %}" defer></script>
   <script src="{% static 'js/scanner.js' %}" defer></script>
 </body>
 </html>

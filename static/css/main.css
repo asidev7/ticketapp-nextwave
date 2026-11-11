@@ -1,18 +1,18 @@
-/* NextWave Party — main stylesheet
-   Rules: Arial only · light background, dark text · WCAG AA contrast ·
-   no gradient/transparent text · mobile-first · 48px touch targets. */
+/* NextWave Party — main stylesheet (layout & components).
+   Rules: light background, dark text · WCAG AA contrast · mobile-first ·
+   48px touch targets. The poster look (colours, fonts) is in theme.css. */
 
 :root {
-  --primary: #0A3D91;
+  --primary: #C8102E;
   --on-primary: #FFFFFF;
-  --link: #0A3D91;
-  --accent: #FF6B00;
-  --on-accent: #111827;
+  --link: #C8102E;
+  --accent: #F5B921;
+  --on-accent: #141414;
   --bg: #FFFFFF;
-  --bg-alt: #F4F6FA;
-  --text: #111827;
-  --text-2: #4B5563;
-  --border: #E5E7EB;
+  --bg-alt: #FFF6EE;
+  --text: #1A1A1A;
+  --text-2: #57534E;
+  --border: #EFE2D8;
   --input-border: #6B7280;
   --success: #16A34A;
   --success-text: #14532D;
@@ -24,7 +24,7 @@
   --info-text: #1E3A8A;
   --radius: 8px;
   --radius-lg: 12px;
-  --font: Arial, Helvetica, sans-serif;
+  --font: "Montserrat", Arial, Helvetica, sans-serif;
   --header-h: 112px;
   color-scheme: light;
 }
@@ -329,7 +329,7 @@ address { font-style: normal; margin-bottom: 16px; }
   width: 100%; min-height: 48px; padding: 10px 12px; font-size: 16px;
   border: 2px solid var(--input-border); border-radius: var(--radius); background: #FFFFFF;
 }
-.field input:focus, .field select:focus { border-color: var(--primary); outline: 3px solid rgba(10, 61, 145, .25); outline-offset: 0; }
+.field input:focus, .field select:focus { border-color: var(--primary); outline: 3px solid rgba(200, 16, 46, .2); outline-offset: 0; }
 .field input[aria-invalid="true"] { border-color: var(--error); }
 .field-help { margin: 6px 0 0; font-size: 14px; color: var(--text-2); }
 .field-error { margin: 6px 0 0; font-size: 14px; font-weight: bold; color: var(--error); }
@@ -344,7 +344,7 @@ address { font-style: normal; margin-bottom: 16px; }
 .option-card__body img { width: 40px; height: 40px; object-fit: contain; }
 .option-card__body small { display: block; color: var(--text-2); font-size: 14px; }
 .option-card__flag { font-size: 30px; line-height: 1; }
-.option-card input:checked + .option-card__body { border-color: var(--primary); background: #EEF3FC; box-shadow: inset 0 0 0 1px var(--primary); }
+.option-card input:checked + .option-card__body { border-color: var(--primary); background: #FFF1F1; box-shadow: inset 0 0 0 1px var(--primary); }
 .option-card input:focus-visible + .option-card__body { outline: 3px solid var(--primary); outline-offset: 2px; }
 .photo-picker { display: flex; align-items: center; gap: 12px; }
 .photo-picker__preview { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); }

@@ -215,8 +215,22 @@ class TicketDesignTests(TestCase):
         self.ticket_type.design_image.save("design.png", ContentFile(buffer.getvalue()), save=True)
         image = render_ticket_image(ticket_data(self._ticket()))
         self.assertEqual(image.getpixel((5, 5)), (200, 0, 120))   # artwork kept
-        # Default QR card: 504 px QR + 36 px padding + 80 px code, centred at (85 %, 50 %) → top padding around y=132.
+        # Default QR card: 504 px QR + 36 px padding + code and number lines, centred at (85 %, 50 %).
         self.assertEqual(image.getpixel((2040, 132)), (255, 255, 255))  # white QR card added on the artwork
+
+    def test_uploaded_design_keeps_its_proportions(self):
+        import io
+
+        from django.core.files.base import ContentFile
+        from PIL import Image
+
+        from .render import render_ticket_image, ticket_data, ticket_page_mm
+
+        buffer = io.BytesIO()
+        Image.new("RGB", (1000, 1000), (10, 10, 10)).save(buffer, format="PNG")
+        self.ticket_type.design_image.save("square.png", ContentFile(buffer.getvalue()), save=True)
+        self.assertEqual(render_ticket_image(ticket_data(self._ticket())).size, (2400, 2400))
+        self.assertEqual(ticket_page_mm(self.ticket_type), (200, 200.0))
 
     @override_settings(TICKET_PDF_ENGINE="pillow")  # Pillow writes the page box uncompressed
     def test_ticket_pdf_is_ticket_size(self):
@@ -228,3 +242,85 @@ class TicketDesignTests(TestCase):
         self.assertTrue(pdf.startswith(b"%PDF"))
         # 200 × 75 mm = 566.9 × 212.6 pt
         self.assertRegex(pdf, rb"/MediaBox \[\s*0 0 566\.\d+ 212\.\d+")
+
+
+class SerialNumberTests(TestCase):
+    def test_serials_follow_each_other_per_event(self):
+        event = make_event()
+        ticket_type = make_ticket_type(event)
+        serials = []
+        for quantity in (2, 1):
+            order = create_order(event=event, ticket_type=ticket_type, quantity=quantity, country="BJ",
+                                 buyer_name="Serial Test", buyer_email="s@example.com")
+            order, _created = fulfil_order(order.pk)
+            serials += list(order.tickets.order_by("pk").values_list("serial", flat=True))
+        self.assertEqual(serials, [1, 2, 3])
+        self.assertEqual(Ticket.objects.get(serial=3).serial_label, "00003")
+
+        other = make_event(slug="other", is_active=False)
+        order = create_order(event=other, ticket_type=make_ticket_type(other), quantity=1, country="BJ",
+                             buyer_name="Other", buyer_email="o@example.com")
+        order, _created = fulfil_order(order.pk)
+        self.assertEqual(order.tickets.get().serial, 1)  # numbering is per event
+
+
+class PrintBatchTests(TestCase):
+    def setUp(self):
+        self.event = make_event(date_start=timezone.now(), days=2)
+        self.ticket_type = make_ticket_type(self.event, capacity=20)
+
+    def test_batch_creates_numbered_tickets_and_a_pdf(self):
+        from django.core import mail
+
+        from .models import PrintBatch
+        from .services import create_print_batch
+
+        with self.captureOnCommitCallbacks(execute=True):  # the PDF is built after the commit
+            batch = create_print_batch(ticket_type=self.ticket_type, quantity=5, per_page=5, note="Outlet A")
+        batch.refresh_from_db()
+        tickets = list(batch.order.tickets.order_by("serial"))
+        self.assertEqual([t.serial for t in tickets], [1, 2, 3, 4, 5])
+        self.assertEqual(batch.serial_range, "00001 → 00005")
+        self.assertEqual(len({t.code for t in tickets}), 5)
+        self.assertTrue(all(parse_qr_payload(t.qr_token) == t.uuid for t in tickets))
+        self.assertEqual(batch.order.status, Order.Status.PAID)
+        self.assertEqual(batch.order.total_amount, 0)  # no online revenue
+        self.ticket_type.refresh_from_db()
+        self.assertEqual(self.ticket_type.sold, 5)
+        self.assertEqual(mail.outbox, [])  # nothing e-mailed
+        self.assertEqual(batch.status, PrintBatch.Status.READY)
+        with batch.pdf.open("rb") as fh:
+            self.assertEqual(fh.read(4), b"%PDF")
+
+    def test_printed_ticket_is_valid_at_the_entrance(self):
+        from django.contrib.auth.models import User
+
+        from scanner.models import ScanLog
+        from scanner.services import scan_ticket
+
+        from .services import create_print_batch
+
+        batch = create_print_batch(ticket_type=self.ticket_type, quantity=1)
+        ticket = batch.order.tickets.get()
+        user = User.objects.create_user("door", "door@example.com", "pw")
+        result = scan_ticket(ticket.qr_token, user, self.event)
+        self.assertEqual(result["result"], ScanLog.Result.ACCEPTED)
+        self.assertEqual(result["ticket"]["serial"], "00001")
+
+    def test_batch_cannot_exceed_the_stock(self):
+        from .services import create_print_batch
+
+        with self.assertRaises(StockError):
+            create_print_batch(ticket_type=self.ticket_type, quantity=21)
+
+    def test_sheet_layouts(self):
+        from .printing import sheet_grid
+
+        four = sheet_grid(4, 900 / 2400)
+        five = sheet_grid(5, 900 / 2400)
+        self.assertEqual((four["cols"], four["rows"], four["page_w"]), (1, 4, 210))
+        self.assertEqual((five["cols"], five["rows"]), (1, 5))
+        self.assertGreater(four["ticket_w"], 180)
+        self.assertLess(five["ticket_h"] * 5, 297 - 20)
+        square = sheet_grid(4, 1.0)  # a square design goes 2 × 2
+        self.assertEqual((square["cols"], square["rows"]), (2, 2))

@@ -1,0 +1,43 @@
+{% load l10n %}{% localize off %}<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  /* Bulk print: shared ticket background (JPEG, embedded once) + sharp QR, code and serial per ticket. */
+  @font-face { font-family: "Anton"; src: url("{{ font_dir }}/Anton-Regular.ttf"); }
+  @font-face { font-family: "Montserrat"; font-weight: 800; src: url("{{ font_dir }}/Montserrat-ExtraBold.ttf"); }
+  @page { size: {{ page_w }}mm {{ page_h }}mm; margin: 0; }
+  body { margin: 0; }
+  .page { position: relative; width: {{ page_w }}mm; height: {{ page_h }}mm; overflow: hidden; page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .t { position: absolute; width: {{ ticket_w }}mm; height: {{ ticket_h }}mm;
+       background: url("{{ type.background }}") 0 0 / 100% 100% no-repeat; font-size: {{ unit_mm }}mm; }
+  .t img, .t p { position: absolute; margin: 0; }
+  .t img { image-rendering: pixelated; }
+  .t p { line-height: 1; text-align: center; white-space: nowrap; letter-spacing: .03em; }
+  .code { font-family: "Montserrat"; font-weight: 800; color: #111; }
+  .serial { font-family: "Anton"; }
+  .t img { left: {{ type.qr.left }}%; top: {{ type.qr.top }}%; width: {{ type.qr.width }}%; height: {{ type.qr.height }}%; }
+  .code { left: {{ type.code.left }}%; width: {{ type.code.width }}%; top: {{ type.code.top }}%; font-size: {{ type.code.size }}em; }
+  .serial { left: {{ type.serial.left }}%; width: {{ type.serial.width }}%; top: {{ type.serial.top }}%; font-size: {{ type.serial.size }}em; color: {{ type.serial.color }}; }
+  /* Crop marks (A4 sheets) */
+  .mark { position: absolute; background: #000; }
+  .mark-h { height: .2mm; width: 8mm; }
+  .mark-v { width: .2mm; height: 8mm; }
+</style>
+</head>
+<body>
+{% for page in pages %}
+  <div class="page">
+    {% for left, top, item in page.tickets %}
+      <div class="t" style="left:{{ left }}mm;top:{{ top }}mm">
+        <img src="{{ item.qr }}" alt="">
+        <p class="code">{{ item.code }}</p>
+        {% if item.serial %}<p class="serial">{{ item.serial }}</p>{% endif %}
+      </div>
+    {% endfor %}
+    {% for kind, style in page.marks %}<span class="mark mark-{{ kind }}" style="{{ style }}"></span>{% endfor %}
+  </div>
+{% endfor %}
+</body>
+</html>{% endlocalize %}

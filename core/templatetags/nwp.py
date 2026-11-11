@@ -75,6 +75,15 @@ def money(amount, currency: str = "XOF") -> str:
 
 
 @register.filter
+def poster_price(amount, currency: str = "NGN") -> str:
+    """Poster style: {{ 15000|poster_price:"NGN" }} → ₦15,000 · {{ 6500|poster_price:"XOF" }} → 6,500 CFA"""
+    if not amount:
+        return ""
+    number = format_number(amount)
+    return f"₦{number}" if currency == "NGN" else f"{number} CFA"
+
+
+@register.filter
 def endate(value, fmt: str = "M j, Y · g:i A") -> str:
     """{{ event.date_start|endate:"M j, Y" }} — English month names in every language."""
     if not value:
@@ -83,6 +92,12 @@ def endate(value, fmt: str = "M j, Y · g:i A") -> str:
         value = timezone.localtime(value)
     with translation.override("en"):
         return dateformat.format(value, fmt)
+
+
+@register.filter
+def lines(text) -> list[str]:
+    """Non-empty lines of a text field, for bullet lists."""
+    return [line.strip(" -•\t") for line in (text or "").splitlines() if line.strip(" -•\t")]
 
 
 @register.filter

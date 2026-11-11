@@ -3,8 +3,8 @@ import csv
 
 from django import forms
 from django.contrib import admin, messages
-from django.http import HttpResponse
-from django.shortcuts import redirect
+from django.http import FileResponse, Http404, HttpResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
@@ -23,11 +23,14 @@ from core.storage import private_storage
 from core.tasks import dispatch
 from core.utils import format_money, format_number, process_holder_photo
 
-from .models import ComplimentaryOrder, Order, OrderItem, Ticket, TicketBenefit, TicketType
+from scanner.models import CheckIn
+
+from .models import ComplimentaryOrder, Order, OrderItem, PrintBatch, Ticket, TicketBenefit, TicketType
+from .printing import render_print_pdf
 from .qr import make_qr_png
 from .render import render_preview_png
-from .services import StockError, cancel_order, fulfil_order, issue_complimentary, recount_stock
-from .tasks import regenerate_ticket_files, resend_order_email
+from .services import StockError, cancel_order, create_print_batch, fulfil_order, issue_complimentary, recount_stock
+from .tasks import build_print_batch, regenerate_ticket_files, resend_order_email
 from .tokens import order_access_url, ticket_download_url
 
 STATUS_COLORS = {
@@ -35,6 +38,8 @@ STATUS_COLORS = {
     "valid": ("#DCFCE7", "#14532D"),
     "pending": ("#FEF3C7", "#78350F"),
     "used": ("#DBEAFE", "#1E3A8A"),
+    "ready": ("#DCFCE7", "#14532D"),
+    "generating": ("#FEF3C7", "#78350F"),
     "failed": ("#FEE2E2", "#7F1D1D"),
     "cancelled": ("#E5E7EB", "#111827"),
     "refunded": ("#E5E7EB", "#111827"),
@@ -78,8 +83,9 @@ class TicketTypeAdmin(ModelAdmin):
         (_("Description"), {"fields": ("description_en", "description_fr")}),
         (_("Spot in the hall"), {"fields": ("zone_label", "seat_image", "seat_preview")}),
         (_("Ticket design"), {
-            "description": _("Upload your ticket artwork (2400 × 900 px). The system adds the QR code, the ticket code "
-                             "and the holder automatically. Save to refresh the preview."),
+            "description": _("Upload one copy of your ticket design for this type. On every ticket (online and printed) "
+                             "the system adds the QR code, the ticket code and its number (No. 00042), valid for each "
+                             "day of the event. Choose where the QR goes, then save to refresh the preview."),
             "fields": ("design_image", ("qr_x", "qr_y", "qr_size"), "holder_overlay", "ticket_preview"),
         }),
     )
@@ -395,23 +401,53 @@ class ComplimentaryOrderAdmin(ModelAdmin):
 # --------------------------------------------------------------------------
 # Tickets
 # --------------------------------------------------------------------------
+class CheckInInline(TabularInline):
+    model = CheckIn
+    extra = 0
+    can_delete = False
+    fields = ("day", "scanned_at", "scanner")
+    readonly_fields = fields
+    verbose_name_plural = _("Entries (one per day)")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description=_("Scanner"))
+    def scanner(self, obj):
+        return obj.scanned_by_label or "—"
+
+
 @admin.register(Ticket)
 class TicketAdmin(ModelAdmin):
-    list_display = ("code", "holder_name", "ticket_type", "status_badge", "order_link", "checked_in_at", "download_count")
-    list_filter = ("status", "ticket_type", "order__country", ("checked_in_at", admin.DateFieldListFilter))
+    list_display = ("code", "serial_display", "holder_name", "ticket_type", "status_badge", "entries", "order_link", "download_count")
+    list_filter = ("status", "ticket_type", ("order__print_batch", admin.EmptyFieldListFilter), "order__country", "checkins__day")
     search_fields = ("code", "holder_name", "order__reference", "order__buyer_email", "order__buyer_phone")
     list_select_related = ("order", "ticket_type")
-    actions = ["regenerate", "cancel_tickets", "reset_checkin"]
+    inlines = [CheckInInline]
+    actions = ["print_selected", "regenerate", "cancel_tickets", "reset_checkin"]
     actions_detail = ["regenerate_detail", "reset_checkin_detail"]
     readonly_fields = (
-        "code", "uuid", "order_link", "ticket_type", "status_badge", "qr_preview", "photo_preview",
+        "code", "serial_display", "uuid", "order_link", "ticket_type", "status_badge", "qr_preview", "photo_preview",
         "checked_in_at", "checked_in_by", "email_sent_at", "download_count", "downloads", "created_at",
     )
     fieldsets = (
-        (None, {"fields": ("code", "status_badge", "order_link", "ticket_type", "holder_name", "holder_photo", "photo_preview")}),
+        (None, {"fields": (("code", "serial_display"), "status_badge", "order_link", "ticket_type", "holder_name", "holder_photo", "photo_preview")}),
         (_("QR code & files"), {"fields": ("qr_preview", "downloads", "uuid")}),
         (_("Entrance"), {"fields": ("checked_in_at", "checked_in_by", "email_sent_at", "download_count", "created_at")}),
     )
+
+    def get_queryset(self, request):
+        from django.db.models import Count
+
+        return super().get_queryset(request).annotate(entry_count=Count("checkins"))
+
+    @admin.display(description=_("No."), ordering="serial")
+    def serial_display(self, obj):
+        return obj.serial_label or "—"
+
+    @admin.display(description=_("Entries"), ordering="entry_count")
+    def entries(self, obj):
+        return f"{getattr(obj, 'entry_count', 0)} / {obj.order.event.days}"
 
     def has_add_permission(self, request):
         return False
@@ -473,11 +509,23 @@ class TicketAdmin(ModelAdmin):
         count = queryset.exclude(status=Ticket.Status.CANCELLED).update(status=Ticket.Status.CANCELLED)
         messages.success(request, _("%(count)s ticket(s) cancelled.") % {"count": count})
 
+    @action(description=_("Print the selected tickets (A4, 4 per page)"))
+    def print_selected(self, request, queryset):
+        tickets = list(queryset.exclude(status=Ticket.Status.CANCELLED).select_related("ticket_type__event", "order__event").order_by("serial"))
+        if not tickets:
+            messages.error(request, _("No valid ticket selected."))
+            return None
+        if len({t.ticket_type_id for t in tickets}) > 1:
+            messages.error(request, _("Select tickets of one ticket type at a time (one design per PDF)."))
+            return None
+        response = HttpResponse(render_print_pdf(tickets, PrintBatch.Paper.A4, 4), content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="tickets-{timezone.now():%Y%m%d-%H%M}.pdf"'
+        return response
+
     @action(description=_("Reset check-in"))
     def reset_checkin(self, request, queryset):
-        count = queryset.filter(status=Ticket.Status.USED).update(
-            status=Ticket.Status.VALID, checked_in_at=None, checked_in_by=None
-        )
+        count = CheckIn.objects.filter(ticket__in=queryset).delete()[0]
+        queryset.filter(status=Ticket.Status.USED).update(status=Ticket.Status.VALID, checked_in_at=None, checked_in_by=None)
         messages.success(request, _("%(count)s check-in(s) reset.") % {"count": count})
 
     @action(description=_("Regenerate files"), url_path="regenerate")
@@ -488,8 +536,129 @@ class TicketAdmin(ModelAdmin):
 
     @action(description=_("Reset check-in"), url_path="reset-checkin")
     def reset_checkin_detail(self, request, object_id):
-        Ticket.objects.filter(pk=object_id, status=Ticket.Status.USED).update(
-            status=Ticket.Status.VALID, checked_in_at=None, checked_in_by=None
-        )
+        CheckIn.objects.filter(ticket_id=object_id).delete()
+        Ticket.objects.filter(pk=object_id).update(status=Ticket.Status.VALID, checked_in_at=None, checked_in_by=None)
         messages.success(request, _("Check-in reset."))
         return redirect(reverse("admin:tickets_ticket_change", args=[object_id]))
+
+
+# --------------------------------------------------------------------------
+# Print batches (bulk printed tickets)
+# --------------------------------------------------------------------------
+class PrintBatchForm(forms.ModelForm):
+    class Meta:
+        model = PrintBatch
+        fields = ("ticket_type", "quantity", "paper", "per_page", "outlet", "note")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        event = Event.get_active()
+        if "ticket_type" in self.fields and event:
+            self.fields["ticket_type"].queryset = TicketType.objects.filter(event=event)
+        if "quantity" in self.fields:
+            self.fields["quantity"].help_text = _("1 to %(max)s. Each ticket gets its own QR code, code and number.") % {
+                "max": PrintBatch.MAX_QUANTITY,
+            }
+
+    def clean(self):
+        cleaned = super().clean()
+        ticket_type, quantity = cleaned.get("ticket_type"), cleaned.get("quantity")
+        if not self.instance.pk and ticket_type and quantity and ticket_type.available < quantity:
+            self.add_error("quantity", _("Only %(count)s ticket(s) left in this category.") % {"count": ticket_type.available})
+        return cleaned
+
+
+@admin.register(PrintBatch)
+class PrintBatchAdmin(ModelAdmin):
+    form = PrintBatchForm
+    list_display = ("created_at", "ticket_type", "quantity", "numbers", "layout", "status_badge", "download", "outlet")
+    list_filter = ("ticket_type", "status", "outlet")
+    search_fields = ("note", "order__reference")
+    list_select_related = ("ticket_type", "outlet")
+    actions_detail = ["download_detail", "rebuild_detail"]
+    readonly_fields = ("event", "numbers", "status_badge", "download", "order_link", "created_by", "created_at")
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return ((None, {
+                "description": _("The system creates the tickets (QR code, code and number for each one, valid for every "
+                                 "day of the event), then the PDF to print: choose A4 and 4 or 5 tickets per page."),
+                "fields": ("ticket_type", "quantity", ("paper", "per_page"), "outlet", "note"),
+            }),)
+        return (
+            (None, {"fields": ("ticket_type", "quantity", "numbers", "status_badge", "download")}),
+            (_("PDF format"), {
+                "description": _("Change the format and save: the PDF is generated again."),
+                "fields": (("paper", "per_page"),),
+            }),
+            (_("Details"), {"fields": ("outlet", "note", "order_link", "event", "created_by", "created_at")}),
+        )
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        return fields + ["ticket_type", "quantity"] if obj else fields
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            super().save_model(request, obj, form, change)
+            if {"paper", "per_page"} & set(form.changed_data):
+                dispatch(build_print_batch, obj.pk)
+            return
+        data = form.cleaned_data
+        batch = create_print_batch(
+            ticket_type=data["ticket_type"], quantity=data["quantity"], paper=data["paper"], per_page=data["per_page"],
+            outlet=data.get("outlet"), note=data.get("note") or "", user=request.user,
+        )
+        obj.pk = batch.pk
+        obj.created_at = batch.created_at
+
+    def response_add(self, request, obj, post_url_continue=None):
+        batch = PrintBatch.objects.get(pk=obj.pk)
+        messages.success(request, _("%(count)s tickets created (numbers %(range)s). The PDF is being generated.") % {
+            "count": batch.quantity, "range": batch.serial_range,
+        })
+        return redirect(reverse("admin:tickets_printbatch_change", args=[obj.pk]))
+
+    @admin.display(description=_("Numbers"))
+    def numbers(self, obj):
+        return obj.serial_range
+
+    @admin.display(description=_("Format"))
+    def layout(self, obj):
+        if obj.paper == PrintBatch.Paper.A4:
+            return _("A4 · %(n)s per page") % {"n": obj.per_page}
+        return _("Ticket size")
+
+    @admin.display(description=_("Status"), ordering="status")
+    def status_badge(self, obj):
+        return badge(obj.status, obj.get_status_display())
+
+    @admin.display(description=_("PDF"))
+    def download(self, obj):
+        if not obj.pk or obj.status != PrintBatch.Status.READY or not obj.pdf:
+            return "—"
+        return format_html('<a href="{}" style="font-weight:bold">{}</a>',
+                           reverse("admin:tickets_printbatch_download_detail", args=[obj.pk]), _("Download the PDF"))
+
+    @admin.display(description=_("Order"))
+    def order_link(self, obj):
+        if not obj.order_id:
+            return "—"
+        return format_html('<a href="{}">{}</a>', reverse("admin:tickets_order_change", args=[obj.order_id]), obj.order.reference)
+
+    @action(description=_("Download the PDF"), url_path="download", permissions=["view"])
+    def download_detail(self, request, object_id):
+        batch = get_object_or_404(PrintBatch, pk=object_id)
+        if not batch.pdf:
+            raise Http404
+        name = batch.pdf.name.rsplit("/", 1)[-1]
+        return FileResponse(batch.pdf.open("rb"), as_attachment=True, filename=name, content_type="application/pdf")
+
+    @action(description=_("Generate the PDF again"), url_path="rebuild", permissions=["change"])
+    def rebuild_detail(self, request, object_id):
+        dispatch(build_print_batch, int(object_id))
+        messages.success(request, _("The PDF is being generated."))
+        return redirect(reverse("admin:tickets_printbatch_change", args=[object_id]))

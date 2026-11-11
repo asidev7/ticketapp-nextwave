@@ -2,16 +2,44 @@ import re
 from datetime import timedelta
 from urllib.parse import parse_qs, urlparse
 
-from django.core.validators import RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.urls import reverse
-from django.utils import timezone, translation
+from django.utils import dateformat, timezone, translation
 from django.utils.translation import gettext_lazy as _
 
 hex_color_validator = RegexValidator(
     regex=r"^#[0-9A-Fa-f]{6}$",
     message=_("Use a hex colour such as #0A3D91."),
 )
+
+
+# A night that goes past midnight still belongs to the evening it started:
+# a scan at 02:00 on Dec 26 counts for Dec 25.
+DAY_CHANGE_HOUR = 6
+
+
+def event_day(moment):
+    """Entry day of a moment (local time, day changes at DAY_CHANGE_HOUR)."""
+    return (timezone.localtime(moment) - timedelta(hours=DAY_CHANGE_HOUR)).date()
+
+
+def _en(value, fmt: str) -> str:
+    with translation.override("en"):
+        return dateformat.format(value, fmt)
+
+
+def youtube_id(url: str) -> str:
+    """Video ID of a YouTube watch / short / embed / youtu.be link, else ''."""
+    parsed = urlparse((url or "").strip())
+    host = parsed.netloc.lower().replace("www.", "").replace("m.", "")
+    if host in ("youtube.com", "youtube-nocookie.com", "music.youtube.com"):
+        if parsed.path.startswith(("/embed/", "/shorts/", "/live/")):
+            return parsed.path.split("/")[2]
+        return parse_qs(parsed.query).get("v", [""])[0]
+    if host == "youtu.be":
+        return parsed.path.lstrip("/").split("/")[0]
+    return ""
 
 
 class TranslatedMixin:
@@ -36,11 +64,11 @@ class SiteSettings(TranslatedMixin, models.Model):
     meta_description = models.CharField(_("meta description"), max_length=180, blank=True)
 
     primary_color = models.CharField(
-        _("primary colour"), max_length=7, default="#0A3D91", validators=[hex_color_validator],
+        _("primary colour"), max_length=7, default="#C8102E", validators=[hex_color_validator],
         help_text=_("Buttons and links. Keep it dark enough to read on white (contrast 4.5:1)."),
     )
     accent_color = models.CharField(
-        _("accent colour"), max_length=7, default="#FF6B00", validators=[hex_color_validator],
+        _("accent colour"), max_length=7, default="#F5B921", validators=[hex_color_validator],
         help_text=_("Badges and highlights. Text on it is automatically black or white for contrast."),
     )
 
@@ -111,8 +139,12 @@ class SiteSettings(TranslatedMixin, models.Model):
 # Event
 # --------------------------------------------------------------------------
 class Event(TranslatedMixin, models.Model):
+    presented_by = models.CharField(
+        _("presented by"), max_length=150, blank=True,
+        help_text=_("Small line above the title, e.g. Next Wave Africa & Vibe City Entertainment."),
+    )
     name = models.CharField(_("name"), max_length=120, default="NextWave Party")
-    edition = models.CharField(_("edition"), max_length=60, default="1st Edition")
+    edition = models.CharField(_("edition"), max_length=60, default="1st Edition", help_text=_("Shown in the red box under the title, e.g. With Q-Dot."))
     slug = models.SlugField(_("slug"), unique=True)
     description_en = models.TextField(_("description (EN)"), blank=True)
     description_fr = models.TextField(_("description (FR)"), blank=True)
@@ -125,6 +157,11 @@ class Event(TranslatedMixin, models.Model):
     date_start = models.DateTimeField(_("show starts"))
     doors_open = models.DateTimeField(_("doors open"), null=True, blank=True)
     date_end = models.DateTimeField(_("ends"), null=True, blank=True)
+    days = models.PositiveSmallIntegerField(
+        _("number of days"), default=1, validators=[MinValueValidator(1), MaxValueValidator(14)],
+        help_text=_("One ticket = one entry per day. 2 = the ticket is valid once on each of two consecutive days "
+                    "(e.g. Dec 25 and Dec 26), starting on the show date."),
+    )
 
     venue_name = models.CharField(_("venue name"), max_length=150)
     venue_address = models.CharField(_("venue address"), max_length=255)
@@ -135,6 +172,15 @@ class Event(TranslatedMixin, models.Model):
         help_text=_("Google Maps → Share → Embed a map → copy the src=\"…\" URL."),
     )
     map_link = models.URLField(_("Google Maps link"), max_length=500, blank=True)
+    tickets_note_en = models.CharField(
+        _("note under the tickets (EN)"), max_length=255, blank=True,
+        help_text=_("e.g. One RFID wristband per person, given at the entrance with your QR ticket."),
+    )
+    tickets_note_fr = models.CharField(_("note under the tickets (FR)"), max_length=255, blank=True)
+    enquiry_phones = models.CharField(
+        _("reservation & enquiry numbers"), max_length=200, blank=True,
+        help_text=_("Comma-separated, e.g. 07070257650, 09166119357, +2290190776888. Shown like on the poster."),
+    )
 
     hall_map_image = models.ImageField(_("hall map"), upload_to="event/", blank=True)
     poster_image = models.ImageField(_("official poster"), upload_to="event/", blank=True)
@@ -162,7 +208,58 @@ class Event(TranslatedMixin, models.Model):
 
     @property
     def ends_at(self):
-        return self.date_end or (self.date_start + timedelta(hours=8))
+        return self.date_end or (self.date_start + timedelta(days=max(self.days, 1) - 1, hours=8))
+
+    # -- entry days -------------------------------------------------------------
+    @property
+    def entry_days(self) -> list:
+        """Dates on which a ticket gives one entry each (first = show date)."""
+        first = event_day(self.date_start)
+        return [first + timedelta(days=i) for i in range(max(self.days, 1))]
+
+    def day_number(self, moment=None) -> int:
+        """1, 2… when `moment` (default: now) falls on an entry day, else 0."""
+        day = event_day(moment or timezone.now())
+        days = self.entry_days
+        return days.index(day) + 1 if day in days else 0
+
+    @property
+    def is_multi_day(self) -> bool:
+        return self.days > 1
+
+    @property
+    def dates_label(self) -> str:
+        """Poster-style dates: '27 DEC 2026', '25/26 DEC 2026', '24–26 DEC 2026', '31 DEC 2026 – 1 JAN 2027'."""
+        days = self.entry_days
+        first, last = days[0], days[-1]
+        if first == last:
+            return _en(first, "j M Y").upper()
+        if (first.year, first.month) == (last.year, last.month):
+            joiner = "/" if len(days) == 2 else "–"
+            return f"{first.day}{joiner}{_en(last, 'j M Y')}".upper()
+        if first.year == last.year:
+            return f"{_en(first, 'j M')} – {_en(last, 'j M Y')}".upper()
+        return f"{_en(first, 'j M Y')} – {_en(last, 'j M Y')}".upper()
+
+    @property
+    def time_label(self) -> str:
+        """'5PM', '8:30PM' (show time, local)."""
+        start = timezone.localtime(self.date_start)
+        return _en(start, "gA" if start.minute == 0 else "g:iA")
+
+    @property
+    def phone_list(self) -> list[tuple[str, str]]:
+        """[(shown, tel: link)] from the comma-separated enquiry numbers."""
+        phones = []
+        for raw in (self.enquiry_phones or "").split(","):
+            shown = raw.strip()
+            if shown:
+                phones.append((shown, re.sub(r"[^\d+]", "", shown)))
+        return phones
+
+    def day_label(self, day) -> str:
+        """'25 DEC' for an entry day."""
+        return _en(day, "j M").upper()
 
     @property
     def is_over(self) -> bool:
@@ -176,14 +273,7 @@ class Event(TranslatedMixin, models.Model):
             return ""
         parsed = urlparse(url)
         host = parsed.netloc.lower().replace("www.", "").replace("m.", "")
-        video_id = ""
-        if host in ("youtube.com", "youtube-nocookie.com"):
-            if parsed.path.startswith(("/embed/", "/shorts/", "/live/")):
-                video_id = parsed.path.split("/")[2]
-            else:
-                video_id = parse_qs(parsed.query).get("v", [""])[0]
-        elif host == "youtu.be":
-            video_id = parsed.path.lstrip("/")
+        video_id = youtube_id(url)
         if video_id:
             return f"https://www.youtube-nocookie.com/embed/{video_id}?autoplay=1&mute=1&playsinline=1&rel=0"
         if host in ("vimeo.com", "player.vimeo.com"):
@@ -219,10 +309,47 @@ class HeroSlide(TranslatedMixin, models.Model):
         return self.title_en or f"Slide {self.pk}"
 
 
+class EventVideo(TranslatedMixin, models.Model):
+    """YouTube videos shown on the website (teasers, artists, last edition…)."""
+
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="videos", verbose_name=_("event"))
+    url = models.URLField(_("YouTube link"), help_text=_("e.g. https://www.youtube.com/watch?v=… or https://youtu.be/…"))
+    title_en = models.CharField(_("title (EN)"), max_length=120, blank=True)
+    title_fr = models.CharField(_("title (FR)"), max_length=120, blank=True)
+    order = models.PositiveIntegerField(_("position"), default=0)
+    is_active = models.BooleanField(_("active"), default=True)
+
+    class Meta:
+        verbose_name = _("YouTube video")
+        verbose_name_plural = _("YouTube videos")
+        ordering = ["order", "pk"]
+
+    def __str__(self):
+        return self.title_en or self.url
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if not youtube_id(self.url):
+            raise ValidationError({"url": _("This is not a YouTube video link.")})
+
+    @property
+    def video_id(self) -> str:
+        return youtube_id(self.url)
+
+    @property
+    def thumbnail_url(self) -> str:
+        return f"https://i.ytimg.com/vi/{self.video_id}/hqdefault.jpg" if self.video_id else ""
+
+    @property
+    def embed_url(self) -> str:
+        return f"https://www.youtube-nocookie.com/embed/{self.video_id}?autoplay=1&rel=0&playsinline=1" if self.video_id else ""
+
+
 class PhysicalOutlet(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="outlets", verbose_name=_("event"))
-    name = models.CharField(_("name"), max_length=120)
-    address = models.CharField(_("address"), max_length=255)
+    name = models.CharField(_("name"), max_length=120, blank=True, help_text=_("Shop or contact person. Empty = the city only."))
+    address = models.CharField(_("address"), max_length=255, blank=True)
     city = models.CharField(_("city"), max_length=100)
     country = models.CharField(_("country"), max_length=100, default="Benin")
     phone = models.CharField(_("phone"), max_length=30, blank=True)
@@ -237,7 +364,7 @@ class PhysicalOutlet(models.Model):
         ordering = ["order", "country", "city", "name"]
 
     def __str__(self):
-        return f"{self.name} ({self.city})"
+        return f"{self.name} ({self.city})" if self.name else self.city
 
 
 class FAQ(TranslatedMixin, models.Model):

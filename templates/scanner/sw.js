@@ -1,9 +1,13 @@
 {% load static %}/* NextWave scanner service worker — caches the app shell only.
    Scan requests (/api/…) always go to the network. */
-const CACHE = "nwp-scanner-v1";
+const CACHE = "nwp-scanner-v2";
 const SHELL = [
   "{% static 'css/scanner.css' %}",
   "{% static 'js/scanner.js' %}",
+  "{% static 'js/pwa.js' %}",
+  "{% static 'fonts/anton-latin.woff2' %}",
+  "{% static 'fonts/montserrat-latin-500.woff2' %}",
+  "{% static 'fonts/montserrat-latin-700.woff2' %}",
   "{% static 'img/icon-192.png' %}",
   "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
 ];

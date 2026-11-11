@@ -20,21 +20,28 @@ def home(request):
         return render(request, "core/no_event.html")
 
     artists = list(event.artists.filter(is_active=True).select_related("category"))
-    category_ids = {a.category_id for a in artists}
+    lineup = []  # poster style: "WHEELS: DJ Lion, DJ Khalifa…" per category
+    for category in ArtistCategory.objects.filter(pk__in={a.category_id for a in artists}):
+        names = [a for a in artists if a.category_id == category.pk and not a.is_headliner]
+        if names:
+            lineup.append((category, names))
     ticket_types = list(event.ticket_types.filter(is_active=True).prefetch_related("benefits"))
     on_sale = SiteSettings.load().sales_open
+    first_slide = event.slides.filter(is_active=True).first()
 
     return render(
         request,
         "core/home.html",
         {
             "event": event,
-            "slides": event.slides.filter(is_active=True),
-            "categories": ArtistCategory.objects.filter(pk__in=category_ids),
-            "artists": artists,
+            "visual": event.poster_image or (first_slide.image if first_slide else None),
+            "headliners": [a for a in artists if a.is_headliner],
+            "lineup": lineup,
             "ticket_types": ticket_types,
+            "currency": "NGN" if event.country.strip().lower().startswith("nigeria") else "XOF",
             "sales_open": on_sale,
             "outlets": event.outlets.filter(is_active=True),
+            "videos": [v for v in event.videos.filter(is_active=True) if v.video_id],
             "faqs": FAQ.objects.filter(is_active=True),
             "min_prices": event.min_prices(),
         },

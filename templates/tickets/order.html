@@ -37,7 +37,8 @@
           <img src="{{ t.png_url }}?inline=1" alt="{% translate 'Ticket' %} {{ t.ticket.code }} — {{ t.ticket.holder_name }}" width="1200" height="450" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
         </a>
         <p class="ticket-preview__code">{{ t.ticket.code }}</p>
-        <p>{{ t.ticket.holder_name }} · {{ t.category }}</p>
+        {% if t.ticket.serial %}<p class="ticket-preview__serial">{% translate "No." %} {{ t.ticket.serial_label }}</p>{% endif %}
+        <p>{{ t.ticket.holder_name }} · {{ t.category }}{% if event.is_multi_day %} · {% blocktranslate with days=event.dates_label %}valid {{ days }}, one entry per day{% endblocktranslate %}{% endif %}</p>
         <details class="entrance-qr">
           <summary>{% translate "Show the QR code for the entrance" %}</summary>
           <img src="{{ t.qr_url }}" alt="QR {{ t.ticket.code }}" width="360" height="360" loading="lazy">
