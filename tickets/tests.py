@@ -267,7 +267,7 @@ class SerialNumberTests(TestCase):
 class PrintBatchTests(TestCase):
     def setUp(self):
         self.event = make_event(date_start=timezone.now(), days=2)
-        self.ticket_type = make_ticket_type(self.event, capacity=20)
+        self.ticket_type = make_ticket_type(self.event, capacity=20, physical_capacity=20)
 
     def test_batch_creates_numbered_tickets_and_a_pdf(self):
         from django.core import mail
@@ -280,13 +280,16 @@ class PrintBatchTests(TestCase):
         batch.refresh_from_db()
         tickets = list(batch.order.tickets.order_by("serial"))
         self.assertEqual([t.serial for t in tickets], [1, 2, 3, 4, 5])
-        self.assertEqual(batch.serial_range, "00001 → 00005")
+        self.assertTrue(all(t.channel == Ticket.Channel.PHYSICAL for t in tickets))
+        self.assertEqual(tickets[0].serial_label, "P-00001")
+        self.assertEqual(batch.serial_range, "P-00001 → P-00005")
         self.assertEqual(len({t.code for t in tickets}), 5)
         self.assertTrue(all(parse_qr_payload(t.qr_token) == t.uuid for t in tickets))
         self.assertEqual(batch.order.status, Order.Status.PAID)
         self.assertEqual(batch.order.total_amount, 0)  # no online revenue
         self.ticket_type.refresh_from_db()
-        self.assertEqual(self.ticket_type.sold, 5)
+        self.assertEqual((self.ticket_type.printed, self.ticket_type.physical_available), (5, 15))
+        self.assertEqual((self.ticket_type.sold, self.ticket_type.available), (0, 20))  # online stock untouched
         self.assertEqual(mail.outbox, [])  # nothing e-mailed
         self.assertEqual(batch.status, PrintBatch.Status.READY)
         with batch.pdf.open("rb") as fh:
@@ -305,13 +308,98 @@ class PrintBatchTests(TestCase):
         user = User.objects.create_user("door", "door@example.com", "pw")
         result = scan_ticket(ticket.qr_token, user, self.event)
         self.assertEqual(result["result"], ScanLog.Result.ACCEPTED)
-        self.assertEqual(result["ticket"]["serial"], "00001")
+        self.assertEqual(result["ticket"]["serial"], "P-00001")
+        self.assertTrue(result["ticket"]["channel"])  # the door sees it is a printed ticket
 
-    def test_batch_cannot_exceed_the_stock(self):
+    def test_batch_cannot_exceed_the_physical_stock(self):
         from .services import create_print_batch
 
         with self.assertRaises(StockError):
             create_print_batch(ticket_type=self.ticket_type, quantity=21)
+        no_physical = make_ticket_type(self.event, capacity=100, physical_capacity=0)
+        with self.assertRaises(StockError):  # online stock is never used for printing
+            create_print_batch(ticket_type=no_physical, quantity=1)
+
+    def test_online_and_physical_stocks_and_numbers_are_separate(self):
+        from .services import create_print_batch
+
+        self.ticket_type.capacity, self.ticket_type.physical_capacity = 2, 3
+        self.ticket_type.save()
+        order = create_order(event=self.event, ticket_type=self.ticket_type, quantity=2, country="BJ",
+                             buyer_name="Online", buyer_email="online@example.com")
+        order, _created = fulfil_order(order.pk)
+        batch = create_print_batch(ticket_type=self.ticket_type, quantity=3)
+        with self.assertRaises(StockError):  # online sold out, printed tickets don't help
+            create_order(event=self.event, ticket_type=self.ticket_type, quantity=1, country="BJ",
+                         buyer_name="Late", buyer_email="late@example.com")
+        with self.assertRaises(StockError):
+            create_print_batch(ticket_type=self.ticket_type, quantity=1)
+        self.assertEqual([t.serial_label for t in order.tickets.order_by("serial")], ["00001", "00002"])
+        self.assertEqual([t.serial_label for t in batch.order.tickets.order_by("serial")], ["P-00001", "P-00002", "P-00003"])
+        self.ticket_type.refresh_from_db()
+        self.assertEqual((self.ticket_type.sold, self.ticket_type.printed), (2, 3))
+        self.assertTrue(self.ticket_type.is_sold_out)  # on the website
+
+    def test_cancel_batch_and_recount_use_the_physical_counter(self):
+        from .services import create_print_batch, recount_stock
+
+        order = create_order(event=self.event, ticket_type=self.ticket_type, quantity=1, country="BJ",
+                             buyer_name="Online", buyer_email="online@example.com")
+        fulfil_order(order.pk)
+        batch = create_print_batch(ticket_type=self.ticket_type, quantity=4)
+        self.ticket_type.refresh_from_db()
+        self.ticket_type.sold = self.ticket_type.printed = 99
+        self.ticket_type.save()
+        recount_stock(self.ticket_type)
+        self.assertEqual((self.ticket_type.sold, self.ticket_type.printed), (1, 4))
+        cancel_order(batch.order.pk)
+        self.ticket_type.refresh_from_db()
+        self.assertEqual((self.ticket_type.sold, self.ticket_type.printed), (1, 0))
+
+    def test_quotas_cannot_go_below_what_is_issued(self):
+        from django.core.exceptions import ValidationError
+
+        from .services import create_print_batch
+
+        create_print_batch(ticket_type=self.ticket_type, quantity=5)
+        self.ticket_type.refresh_from_db()
+        self.ticket_type.physical_capacity = 4
+        with self.assertRaises(ValidationError):
+            self.ticket_type.full_clean()
+
+    def test_printed_ticket_looks_different(self):
+        from .printing import render_print_pdf
+        from .render import render_ticket_image, sample_data
+        from .services import create_print_batch
+
+        online = render_ticket_image(sample_data(self.ticket_type))
+        physical = render_ticket_image(sample_data(self.ticket_type, physical=True))
+        self.assertEqual(online.getpixel((2390, 450)), (255, 255, 255))   # white stub online
+        self.assertNotEqual(physical.getpixel((2390, 450)), (255, 255, 255))  # gold stub printed
+
+        batch = create_print_batch(ticket_type=self.ticket_type, quantity=1)
+        order = create_order(event=self.event, ticket_type=self.ticket_type, quantity=1, country="BJ",
+                             buyer_name="Online", buyer_email="online@example.com")
+        order, _created = fulfil_order(order.pk)
+        with self.assertRaises(ValueError):  # one look per PDF
+            render_print_pdf([batch.order.tickets.get(), order.tickets.get()])
+
+    def test_printed_design_with_uploaded_artwork(self):
+        import io
+
+        from django.core.files.base import ContentFile
+        from PIL import Image
+
+        from .render import render_ticket_image, sample_data
+
+        for field, color in (("design_image", (200, 0, 120)), ("physical_design_image", (0, 90, 200))):
+            buffer = io.BytesIO()
+            Image.new("RGB", (1200, 450), color).save(buffer, format="PNG")
+            getattr(self.ticket_type, field).save(f"{field}.png", ContentFile(buffer.getvalue()), save=True)
+        self.assertEqual(render_ticket_image(sample_data(self.ticket_type)).getpixel((5, 5)), (200, 0, 120))
+        physical = render_ticket_image(sample_data(self.ticket_type, physical=True))
+        self.assertEqual(physical.getpixel((5, 5)), (0, 90, 200))  # its own artwork
+        self.assertNotEqual(physical.getpixel((2040, 132)), (255, 255, 255))  # gold QR card, not white
 
     def test_sheet_layouts(self):
         from .printing import sheet_grid
@@ -324,3 +412,108 @@ class PrintBatchTests(TestCase):
         self.assertLess(five["ticket_h"] * 5, 297 - 20)
         square = sheet_grid(4, 1.0)  # a square design goes 2 × 2
         self.assertEqual((square["cols"], square["rows"]), (2, 2))
+
+
+class SaleDateTests(TestCase):
+    def setUp(self):
+        self.event = make_event()
+
+    def test_ticket_not_on_sale_before_its_start_date(self):
+        from django.urls import reverse
+
+        ticket_type = make_ticket_type(self.event, sale_start=timezone.now() + timedelta(days=2))
+        self.assertTrue(ticket_type.sale_not_started)
+        self.assertFalse(ticket_type.is_on_sale())
+        home = self.client.get(reverse("core:home")).content.decode()
+        self.assertIn("On sale from", home)
+        self.assertNotIn(ticket_type.get_checkout_url(), home)
+        checkout = self.client.get(ticket_type.get_checkout_url()).content.decode()
+        self.assertIn("Sales for this ticket open on", checkout)
+        with self.assertRaises(StockError):
+            create_order(event=self.event, ticket_type=ticket_type, quantity=1, country="BJ",
+                         buyer_name="Early", buyer_email="e@example.com")
+
+        ticket_type.sale_start = timezone.now() - timedelta(minutes=1)
+        ticket_type.save()
+        self.assertTrue(ticket_type.is_on_sale())
+        self.assertIn(ticket_type.get_checkout_url(), self.client.get(reverse("core:home")).content.decode())
+
+    def test_ticket_not_on_sale_after_its_end_date(self):
+        ticket_type = make_ticket_type(self.event, sale_end=timezone.now() - timedelta(hours=1))
+        self.assertTrue(ticket_type.sale_ended)
+        self.assertFalse(ticket_type.is_on_sale())
+
+
+class ResetSalesTests(TestCase):
+    def setUp(self):
+        self.event = make_event()
+        self.ticket_type = make_ticket_type(self.event, capacity=20, physical_capacity=20)
+
+    def _sell(self, ticket_type, quantity=1, event=None):
+        order = create_order(event=event or self.event, ticket_type=ticket_type, quantity=quantity, country="BJ",
+                             buyer_name="Test Buyer", buyer_email="t@example.com")
+        return fulfil_order(order.pk)[0]
+
+    def _reset(self, *args):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        with self.captureOnCommitCallbacks(execute=True):
+            call_command("reset_sales", *args, stdout=out)
+        return out.getvalue()
+
+    def test_without_yes_nothing_changes(self):
+        self._sell(self.ticket_type, 2)
+        out = self._reset()
+        self.assertIn("Nothing was changed", out)
+        self.assertIn("1 orders: 1 paid online", out)
+        self.assertEqual(Ticket.objects.count(), 2)
+        self.ticket_type.refresh_from_db()
+        self.assertEqual(self.ticket_type.sold, 2)
+
+    def test_reset_clears_the_sales_and_restarts_the_numbers(self):
+        from datetime import datetime
+
+        from core.models import SiteSettings
+        from core.storage import private_storage
+
+        from .services import create_print_batch
+
+        self._sell(self.ticket_type, 3)
+        create_order(event=self.event, ticket_type=self.ticket_type, quantity=1, country="BJ",
+                     buyer_name="Pending", buyer_email="p@example.com")
+        with self.captureOnCommitCallbacks(execute=True):
+            batch = create_print_batch(ticket_type=self.ticket_type, quantity=2, per_page=4)
+        batch.refresh_from_db()
+        self.assertTrue(private_storage().exists(batch.pdf.name))
+        other = make_event(slug="other", is_active=False)
+        kept = self._sell(make_ticket_type(other), event=other)
+        SiteSettings.objects.update_or_create(pk=1, defaults={"sales_open": False})
+
+        out = self._reset("--yes", "--sale-start", "2030-01-15 10:00")
+        self.assertIn("Done", out)
+        self.assertFalse(Order.objects.filter(event=self.event).exists())
+        self.assertFalse(Ticket.objects.filter(order__event=self.event).exists())
+        self.assertTrue(Order.objects.filter(pk=kept.pk).exists())  # other events are not touched
+        self.assertFalse(private_storage().exists(batch.pdf.name))
+        self.ticket_type.refresh_from_db()
+        self.assertEqual((self.ticket_type.sold, self.ticket_type.reserved, self.ticket_type.printed), (0, 0, 0))
+        self.assertEqual((self.ticket_type.capacity, self.ticket_type.physical_capacity), (20, 20))  # quotas kept
+        self.assertEqual(self.ticket_type.sale_start, timezone.make_aware(datetime(2030, 1, 15, 10, 0)))
+        self.assertTrue(self.ticket_type.sale_not_started)
+        self.assertTrue(SiteSettings.load().sales_open)
+
+        TicketType = type(self.ticket_type)
+        TicketType.objects.filter(pk=self.ticket_type.pk).update(sale_start=None)
+        self.ticket_type.refresh_from_db()
+        self.assertEqual(self._sell(self.ticket_type).tickets.get().serial_label, "00001")
+        batch = create_print_batch(ticket_type=self.ticket_type, quantity=1, per_page=4)
+        self.assertEqual(batch.serial_range, "P-00001 → P-00001")
+
+    def test_bad_date_is_refused(self):
+        from django.core.management.base import CommandError
+
+        with self.assertRaises(CommandError):
+            self._reset("--sale-start", "20/11/2026")

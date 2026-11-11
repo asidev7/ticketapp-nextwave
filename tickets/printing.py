@@ -84,10 +84,10 @@ def _css_top(cap_top: float, family: str, size: int) -> float:
     return cap_top - fnt.getbbox("H")[1] - (size - ascent - descent) / 2
 
 
-def _type_style(ticket_type) -> dict:
+def _type_style(ticket_type, physical: bool) -> dict:
     """Positions (% of the ticket) and font sizes (em of 1 design pixel) of the per-ticket parts."""
-    width, height = ticket_size(ticket_type)
-    layout = qr_layout(ticket_type)
+    width, height = ticket_size(ticket_type, physical)
+    layout = qr_layout(ticket_type, physical)
     x, y, size = layout.qr
     half = min(330, width / 2)
     text = {"left": 100 * (layout.cx - half) / width, "width": 100 * 2 * half / width}
@@ -100,18 +100,18 @@ def _type_style(ticket_type) -> dict:
 
 
 def _html(tickets: list[Ticket], paper: str, per_page: int, workdir: Path) -> str:
-    """All tickets must share one ticket type (one design, one size)."""
-    tt = tickets[0].ticket_type
+    """All tickets must share one ticket type and one channel (one design, one size)."""
+    tt, physical = tickets[0].ticket_type, tickets[0].is_physical
     background = workdir / f"type-{tt.pk}.jpg"
-    render_ticket_image(blank_data(tt)).save(background, format="JPEG", quality=94, subsampling=0)
-    style = {"pk": tt.pk, "background": background.as_uri(), **_type_style(tt)}
+    render_ticket_image(blank_data(tt, physical)).save(background, format="JPEG", quality=94, subsampling=0)
+    style = {"pk": tt.pk, "background": background.as_uri(), **_type_style(tt, physical)}
     items = [{"qr": qr_data_uri(t.qr_token), "code": t.code, "serial": serial_text(t.serial_label)} for t in tickets]
 
-    width_px, height_px = ticket_size(tt)
+    width_px, height_px = ticket_size(tt, physical)
     if paper == PrintBatch.Paper.A4:
         grid = sheet_grid(per_page, height_px / width_px)
     else:
-        page_w, page_h = ticket_page_mm(tt)
+        page_w, page_h = ticket_page_mm(tt, physical)
         grid = {"page_w": page_w, "page_h": page_h, "cols": 1, "rows": 1, "ticket_w": page_w, "ticket_h": page_h}
     cols, rows = grid["cols"], grid["rows"]
     width, height = grid["ticket_w"], grid["ticket_h"]
@@ -152,12 +152,12 @@ def _pillow_sheets(tickets: list[Ticket], paper: str, per_page: int) -> bytes:
     """Fallback without WeasyPrint: raster pages (150 dpi), written page by page."""
     dpi = 150
     px = lambda mm: round(mm / 25.4 * dpi)  # noqa: E731
-    tt = tickets[0].ticket_type
-    width_px, height_px = ticket_size(tt)
+    tt, physical = tickets[0].ticket_type, tickets[0].is_physical
+    width_px, height_px = ticket_size(tt, physical)
     if paper == PrintBatch.Paper.A4:
         grid = sheet_grid(per_page, height_px / width_px)
     else:
-        page_w, page_h = ticket_page_mm(tt)
+        page_w, page_h = ticket_page_mm(tt, physical)
         grid = {"page_w": page_w, "page_h": page_h, "cols": 1, "rows": 1, "ticket_w": page_w, "ticket_h": page_h}
         per_page = 1
     size = (px(grid["ticket_w"]), px(grid["ticket_h"]))
@@ -175,9 +175,11 @@ def _pillow_sheets(tickets: list[Ticket], paper: str, per_page: int) -> bytes:
 
 
 def render_print_pdf(tickets: list[Ticket], paper: str = "a4", per_page: int = 4) -> bytes:
-    """Print PDF for tickets of one ticket type."""
+    """Print PDF for tickets of one ticket type and one channel (online or printed)."""
     if not tickets:
         raise ValueError("No tickets to print")
+    if len({(t.ticket_type_id, t.channel) for t in tickets}) > 1:
+        raise ValueError("Tickets of one ticket type and one channel per PDF")
     if settings.TICKET_PDF_ENGINE == "weasyprint":
         try:
             from weasyprint import HTML

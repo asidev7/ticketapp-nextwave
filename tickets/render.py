@@ -7,6 +7,10 @@
 * With an uploaded design (TicketType.design_image) the artwork is the
   background; the system adds the QR code, code and serial number (and, if
   wanted, the holder's photo and name) at the positions set in the admin.
+* Physical tickets (print batches) never look like online ones: gold stub
+  with a PHYSICAL TICKET label and P-00042 numbers on the default design; on
+  an uploaded design, the printed version of the artwork if there is one and
+  a gold QR card with the label.
 
 The QR code, code and serial number are the only parts that change from one
 ticket to the next: `qr_layout()` gives their position so the bulk print
@@ -48,7 +52,7 @@ from core.poster import (
 )
 from core.utils import hex_to_rgb, text_color_on
 
-from .models import Order, Ticket
+from .models import Order, Ticket, serial_label
 from .qr import build_qr_payload, make_qr_image, make_qr_png
 
 logger = logging.getLogger("tickets")
@@ -215,6 +219,7 @@ class TicketData:
     event: object
     serial: str = ""
     photo: Image.Image | None = None
+    physical: bool = False
 
 
 def ticket_data(ticket: Ticket) -> TicketData:
@@ -225,38 +230,40 @@ def ticket_data(ticket: Ticket) -> TicketData:
                 photo = Image.open(fh).copy()
         except (OSError, ValueError):
             logger.warning("Holder photo missing for ticket %s", ticket.code)
-    printed = hasattr(ticket.order, "print_batch")
+    physical = ticket.is_physical
     return TicketData(
-        holder_name="" if printed else ticket.holder_name,
+        holder_name="" if physical else ticket.holder_name,
         initials=ticket.initials,
         code=ticket.code,
         qr_token=ticket.qr_token,
-        reference="" if printed else ticket.order.reference,
+        reference="" if physical else ticket.order.reference,
         ticket_type=ticket.ticket_type,
         event=ticket.order.event,
         serial=ticket.serial_label,
         photo=photo,
+        physical=physical,
     )
 
 
-def sample_data(ticket_type) -> TicketData:
+def sample_data(ticket_type, physical: bool = False) -> TicketData:
     """Fake holder for the admin preview (its QR is valid but matches no ticket)."""
     return TicketData(
-        holder_name="Ade Johnson",
+        holder_name="" if physical else "Ade Johnson",
         initials="AJ",
         code="NWP-AB12-CD34",
         qr_token=build_qr_payload(uuid.UUID(int=0)),
-        reference="NWP-2026-SAMPLE",
+        reference="" if physical else "NWP-2026-SAMPLE",
         ticket_type=ticket_type,
         event=ticket_type.event,
-        serial="00042",
+        serial=serial_label(42, Ticket.Channel.PHYSICAL if physical else Ticket.Channel.ONLINE),
+        physical=physical,
     )
 
 
-def blank_data(ticket_type) -> TicketData:
+def blank_data(ticket_type, physical: bool = False) -> TicketData:
     """Everything but the per-ticket parts: background of the bulk print sheets."""
     return TicketData(holder_name="", initials="", code="", qr_token="", reference="",
-                      ticket_type=ticket_type, event=ticket_type.event)
+                      ticket_type=ticket_type, event=ticket_type.event, physical=physical)
 
 
 def avatar(data: TicketData, size: int, color_hex: str) -> Image.Image:
@@ -283,11 +290,19 @@ def _center_text(draw, text: str, fnt, cx: float, y: float, fill) -> None:
 # Size: the default design is 2400 × 900; an uploaded design keeps its own
 # proportions (2400 px wide), so it is never cropped.
 # --------------------------------------------------------------------------
-def ticket_size(ticket_type) -> tuple[int, int]:
-    if not ticket_type.design_image:
+def design_image(ticket_type, physical: bool = False):
+    """Uploaded artwork of the ticket (printed tickets may have their own), or None."""
+    if physical and ticket_type.physical_design_image:
+        return ticket_type.physical_design_image
+    return ticket_type.design_image or None
+
+
+def ticket_size(ticket_type, physical: bool = False) -> tuple[int, int]:
+    design = design_image(ticket_type, physical)
+    if not design:
         return W, H
     try:
-        width, height = ticket_type.design_image.width, ticket_type.design_image.height
+        width, height = design.width, design.height
     except (OSError, ValueError):
         return W, H
     if not width or not height:
@@ -295,9 +310,9 @@ def ticket_size(ticket_type) -> tuple[int, int]:
     return W, int(min(max(W * height / width, 300), 4800))
 
 
-def ticket_page_mm(ticket_type) -> tuple[float, float]:
+def ticket_page_mm(ticket_type, physical: bool = False) -> tuple[float, float]:
     """PDF page of one ticket: 200 mm wide, height from the design's proportions."""
-    width, height = ticket_size(ticket_type)
+    width, height = ticket_size(ticket_type, physical)
     return PAGE_MM[0], round(PAGE_MM[0] * height / width, 2)
 
 
@@ -312,28 +327,32 @@ class QrLayout:
     code_size: int
     serial_top: float
     serial_size: int
-    box: tuple[int, int, int, int] | None = None   # white card behind (uploaded designs)
+    box: tuple[int, int, int, int] | None = None   # card behind (uploaded designs)
     radius: int = 0
     serial_color: tuple = RED
+    label_top: float | None = None        # PHYSICAL TICKET label on the card (printed tickets)
 
 
-def qr_layout(ticket_type) -> QrLayout:
-    if not ticket_type.design_image:
+def qr_layout(ticket_type, physical: bool = False) -> QrLayout:
+    if not design_image(ticket_type, physical):
         return QrLayout(qr=(1840, 98, 420), cx=STUB_X + (W - STUB_X) / 2, code_top=540, code_size=40,
                         serial_top=598, serial_size=54)
-    width, height = ticket_size(ticket_type)
+    width, height = ticket_size(ticket_type, physical)
     qr_size = int(min(width, height) * ticket_type.qr_size / 100)
     pad = max(18, qr_size // 14)
     line = int(qr_size * 0.15)
-    box_w, box_h = qr_size + 2 * pad, qr_size + pad + 2 * line + pad // 2
+    label = line if physical else 0
+    box_w, box_h = qr_size + 2 * pad, label + qr_size + pad + 2 * line + pad // 2
     x0 = int(min(max(width * ticket_type.qr_x / 100 - box_w / 2, 12), width - box_w - 12))
     y0 = int(min(max(height * ticket_type.qr_y / 100 - box_h / 2, 12), height - box_h - 12))
     size = max(18, int(line * 0.55))
+    top = y0 + label
     return QrLayout(
-        qr=(x0 + pad, y0 + pad, qr_size), cx=x0 + box_w / 2,
-        code_top=y0 + pad + qr_size + line * 0.22, code_size=size,
-        serial_top=y0 + pad + qr_size + line * 1.18, serial_size=size,
+        qr=(x0 + pad, top + pad, qr_size), cx=x0 + box_w / 2,
+        code_top=top + pad + qr_size + line * 0.22, code_size=size,
+        serial_top=top + pad + qr_size + line * 1.18, serial_size=size,
         box=(x0, y0, x0 + box_w, y0 + box_h), radius=pad,
+        label_top=y0 + pad * 0.9 if physical else None,
     )
 
 
@@ -341,10 +360,21 @@ def serial_text(serial: str) -> str:
     return f"{_('No.')} {serial}" if serial else ""
 
 
+def _draw_card(img: Image.Image, layout: QrLayout, physical: bool) -> None:
+    """Card behind the QR code of an uploaded design: white, or gold with PHYSICAL TICKET on printed tickets."""
+    if not layout.box:
+        return
+    draw = ImageDraw.Draw(img)
+    draw.rounded_rectangle(layout.box, radius=layout.radius, fill=GOLD_LIGHT if physical else WHITE)
+    if layout.label_top is not None:
+        label = _("PHYSICAL TICKET")
+        width = layout.box[2] - layout.box[0] - layout.radius
+        fnt = _fit_font(draw, label, width, layout.code_size, 12, family="heavy", tracking=1)
+        _text_at_cap(draw, layout.cx, layout.label_top, label, fnt, INK, tracking=1, center=True)
+
+
 def _draw_per_ticket(img: Image.Image, data: TicketData, layout: QrLayout) -> None:
     draw = ImageDraw.Draw(img)
-    if layout.box:
-        draw.rounded_rectangle(layout.box, radius=layout.radius, fill=WHITE)
     x, y, size = layout.qr
     img.paste(_qr(data.qr_token, size), (x, y))
     code_font = font(layout.code_size, family="heavy")
@@ -395,7 +425,13 @@ def _stub(img: Image.Image, data: TicketData) -> None:
         admit = f"{admit} · {_('%(days)s DAYS') % {'days': event.days}}"
     _text_at_cap(draw, cx, 44, admit, _fit_font(draw, admit, 600, 30, 20, family="heavy", tracking=5), INK,
                  tracking=5, center=True)
-    if data.reference:
+    if data.physical:
+        label = _("PHYSICAL TICKET")
+        fnt = _fit_font(draw, label, 520, 26, 18, family="heavy", tracking=4)
+        half = text_width(draw, label, fnt, 4) / 2 + 26
+        draw.rounded_rectangle([cx - half, 652, cx + half, 698], radius=23, fill=INK)
+        _text_at_cap(draw, cx, 675 - _cap_height(fnt) / 2, label, fnt, GOLD_LIGHT, tracking=4, center=True)
+    elif data.reference:
         _text_at_cap(draw, cx, 670, f"{_('Order')} {data.reference}", font(22, family="semibold"), GREY, center=True)
     _day_boxes(img, event, 712, 858)
 
@@ -404,6 +440,8 @@ def _render_default(data: TicketData) -> Image.Image:
     tt, event = data.ticket_type, data.event
     color = tt.color or "#C8102E"
     img = Image.new("RGB", (W, H), WHITE)
+    if data.physical:  # printed tickets: gold stub, never mistaken for an online ticket
+        ImageDraw.Draw(img).rectangle([STUB_X, 0, W, H], fill=GOLD_LIGHT)
     img.paste(red_background((STUB_X, H), glow=(0.36, 0.36), seed=event.pk or 25), (0, 0))
     torn_band(img, BAND_Y, 0, STUB_X, seed=(event.pk or 3) + 11)
     draw = ImageDraw.Draw(img)
@@ -450,7 +488,7 @@ def _render_default(data: TicketData) -> Image.Image:
     name_font = _fit_font(draw, name, rw - 64, 104, 48, family="display")
     zone_font = font(26, family="semibold")
     panel_h = 32 + _cap_height(label_font) + 22 + _cap_height(name_font) + (46 if tt.zone_label else 0) + 34
-    holder_h = 150 if data.holder_name else 0
+    holder_h = 150 if data.holder_name else (112 if data.physical else 0)
     note_h = 70
     top = int(70 + (BAND_Y - 70 - 40 - panel_h - holder_h - note_h - (40 if holder_h else 0) - 30) / 2)
     draw.rounded_rectangle([rx, top, rx + rw, top + panel_h], radius=18, outline=GOLD, width=4)
@@ -471,6 +509,14 @@ def _render_default(data: TicketData) -> Image.Image:
         holder_font = font(36, family="heavy")
         for i, line in enumerate(_wrap(draw, data.holder_name.upper(), holder_font, rx + rw - hx, 2)):
             _text_at_cap(draw, hx, y + 58 + i * 46, line, holder_font, WHITE)
+        y += holder_h + 40
+    elif data.physical:
+        draw.rounded_rectangle([rx, y, rx + rw, y + holder_h], radius=18, fill=GOLD)
+        label = _("PHYSICAL TICKET")
+        _text_at_cap(draw, rx + 32, y + 24, label, _fit_font(draw, label, rw - 64, 40, 24, family="black", tracking=2),
+                     INK, tracking=2)
+        detail = _("Sold at an official outlet")
+        _text_at_cap(draw, rx + 32, y + 74, detail, _fit_font(draw, detail, rw - 64, 24, 16, family="semibold"), INK)
         y += holder_h + 40
     if event.is_multi_day:
         note, sub = _("1 TICKET COVERS %(days)s DAYS") % {"days": event.days}, _("One entry per day")
@@ -494,7 +540,7 @@ def _render_default(data: TicketData) -> Image.Image:
     _stub(img, data)
     _perforate(img)
     if data.qr_token:
-        _draw_per_ticket(img, data, qr_layout(tt))
+        _draw_per_ticket(img, data, qr_layout(tt, data.physical))
     return img
 
 
@@ -503,9 +549,9 @@ def _render_default(data: TicketData) -> Image.Image:
 # --------------------------------------------------------------------------
 def _render_on_artwork(data: TicketData) -> Image.Image:
     tt = data.ticket_type
-    with tt.design_image.open("rb") as fh:
+    with design_image(tt, data.physical).open("rb") as fh:
         art = ImageOps.exif_transpose(Image.open(fh)).convert("RGB")
-    width, height = ticket_size(tt)
+    width, height = ticket_size(tt, data.physical)
     img = art.resize((width, height), Image.Resampling.LANCZOS)
 
     # Holder: photo + name + category on a light panel.
@@ -530,11 +576,10 @@ def _render_on_artwork(data: TicketData) -> Image.Image:
         detail_lines = _wrap(draw, detail, detail_font, text_w, 1)
         draw.text((tx, py + 106), detail_lines[0] if detail_lines else "", font=detail_font, fill=MUTED)
 
-    layout = qr_layout(tt)
-    if data.qr_token:
+    layout = qr_layout(tt, data.physical)
+    _draw_card(img, layout, data.physical)
+    if data.qr_token:  # without it: print background, the per-ticket parts are drawn on top
         _draw_per_ticket(img, data, layout)
-    else:  # print background: the white card only, the rest is drawn on top
-        ImageDraw.Draw(img).rounded_rectangle(layout.box, radius=layout.radius, fill=WHITE)
     return img
 
 
@@ -543,7 +588,7 @@ def _render_on_artwork(data: TicketData) -> Image.Image:
 # --------------------------------------------------------------------------
 def render_ticket_image(data: TicketData) -> Image.Image:
     """Full ticket; with `blank_data()` the shared background of the print sheets."""
-    if data.ticket_type.design_image:
+    if design_image(data.ticket_type, data.physical):
         try:
             return _render_on_artwork(data)
         except (OSError, ValueError):
@@ -561,9 +606,9 @@ def render_ticket_png(ticket: Ticket) -> bytes:
     return _png_bytes(render_ticket_image(ticket_data(ticket)))
 
 
-def render_preview_png(ticket_type, width: int = 1200) -> bytes:
+def render_preview_png(ticket_type, width: int = 1200, physical: bool = False) -> bytes:
     """Sample ticket for the admin (fake holder)."""
-    image = render_ticket_image(sample_data(ticket_type))
+    image = render_ticket_image(sample_data(ticket_type, physical))
     image = image.resize((width, int(width * image.height / image.width)), Image.Resampling.LANCZOS)
     return _png_bytes(image)
 
@@ -606,7 +651,8 @@ def images_to_pdf(images: list[Image.Image], size_mm: tuple[float, float]) -> by
 def render_tickets_pdf(tickets: list[Ticket]) -> bytes:
     if not tickets:
         raise ValueError("No tickets to render")
-    return images_to_pdf([_ticket_image(ticket) for ticket in tickets], ticket_page_mm(tickets[0].ticket_type))
+    first = tickets[0]
+    return images_to_pdf([_ticket_image(ticket) for ticket in tickets], ticket_page_mm(first.ticket_type, first.is_physical))
 
 
 # --------------------------------------------------------------------------

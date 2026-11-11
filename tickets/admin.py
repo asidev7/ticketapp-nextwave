@@ -29,7 +29,15 @@ from .models import ComplimentaryOrder, Order, OrderItem, PrintBatch, Ticket, Ti
 from .printing import render_print_pdf
 from .qr import make_qr_png
 from .render import render_preview_png
-from .services import StockError, cancel_order, create_print_batch, fulfil_order, issue_complimentary, recount_stock
+from .services import (
+    StockError,
+    cancel_order,
+    create_print_batch,
+    fulfil_order,
+    issue_complimentary,
+    physical_stock_error,
+    recount_stock,
+)
 from .tasks import build_print_batch, regenerate_ticket_files, resend_order_email
 from .tokens import order_access_url, ticket_download_url
 
@@ -43,6 +51,8 @@ STATUS_COLORS = {
     "failed": ("#FEE2E2", "#7F1D1D"),
     "cancelled": ("#E5E7EB", "#111827"),
     "refunded": ("#E5E7EB", "#111827"),
+    "online": ("#DBEAFE", "#1E3A8A"),
+    "physical": ("#FDE68A", "#78350F"),
 }
 
 
@@ -67,11 +77,14 @@ class TicketBenefitInline(TabularInline):
 
 @admin.register(TicketType)
 class TicketTypeAdmin(ModelAdmin):
-    list_display = ("name_en", "zone_label", "price_xof_display", "price_ngn_display", "stock", "is_active")
+    list_display = ("name_en", "zone_label", "price_xof_display", "price_ngn_display", "online_stock", "physical_stock", "sale_window", "is_active")
     list_filter = ("event", "is_active")
     search_fields = ("name_en", "name_fr", "zone_label")
     prepopulated_fields = {"slug": ("name_en",)}
-    readonly_fields = ("sold", "reserved", "available_display", "seat_preview", "ticket_preview")
+    readonly_fields = (
+        "sold", "reserved", "available_display", "printed", "physical_available_display",
+        "seat_preview", "ticket_preview", "physical_ticket_preview",
+    )
     inlines = [TicketBenefitInline]
     ordering_field = "order"
     hide_ordering_field = True
@@ -79,14 +92,23 @@ class TicketTypeAdmin(ModelAdmin):
     fieldsets = (
         (None, {"fields": ("event", "name_en", "name_fr", "slug", "color", "is_active")}),
         (_("Prices"), {"fields": ("price_xof", "price_ngn")}),
-        (_("Stock"), {"fields": ("capacity", "sold", "reserved", "available_display", "sale_start", "sale_end")}),
+        (_("Online sale"), {
+            "description": _("Tickets bought on the website. Their stock is separate from the printed tickets."),
+            "fields": ("capacity", ("sold", "reserved", "available_display"), "sale_start", "sale_end"),
+        }),
+        (_("Physical sale (printed tickets)"), {
+            "description": _("Tickets printed in bulk and sold at the outlets (Print batches). They have their own "
+                             "numbers (P-00001…) and look, and never use the online stock."),
+            "fields": ("physical_capacity", ("printed", "physical_available_display")),
+        }),
         (_("Description"), {"fields": ("description_en", "description_fr")}),
         (_("Spot in the hall"), {"fields": ("zone_label", "seat_image", "seat_preview")}),
         (_("Ticket design"), {
             "description": _("Upload one copy of your ticket design for this type. On every ticket (online and printed) "
                              "the system adds the QR code, the ticket code and its number (No. 00042), valid for each "
                              "day of the event. Choose where the QR goes, then save to refresh the preview."),
-            "fields": ("design_image", ("qr_x", "qr_y", "qr_size"), "holder_overlay", "ticket_preview"),
+            "fields": ("design_image", ("qr_x", "qr_y", "qr_size"), "holder_overlay", "ticket_preview",
+                       "physical_design_image", "physical_ticket_preview"),
         }),
     )
 
@@ -98,13 +120,49 @@ class TicketTypeAdmin(ModelAdmin):
     def price_ngn_display(self, obj):
         return format_money(obj.price_ngn, "NGN")
 
-    @admin.display(description=_("Sold / capacity"))
-    def stock(self, obj):
-        return f"{format_number(obj.sold)} / {format_number(obj.capacity)} (+{obj.reserved} reserved)"
+    @admin.display(description=_("Online: sold / total"))
+    def online_stock(self, obj):
+        text = f"{format_number(obj.sold)} / {format_number(obj.capacity)}"
+        if obj.reserved:
+            text += " " + _("(+%(count)s reserved)") % {"count": obj.reserved}
+        return format_html("{}<br><small>{}</small>", text, _("%(count)s left") % {"count": format_number(obj.available)})
 
-    @admin.display(description=_("Available"))
+    @admin.display(description=_("Physical: printed / total"))
+    def physical_stock(self, obj):
+        if not obj.physical_capacity:
+            return "—"
+        return format_html(
+            "{} / {}<br><small>{}</small>", format_number(obj.printed), format_number(obj.physical_capacity),
+            _("%(count)s left to print") % {"count": format_number(obj.physical_available)},
+        )
+
+    @admin.display(description=_("Online sale"), ordering="sale_start")
+    def sale_window(self, obj):
+        fmt = "%d/%m/%Y %H:%M"
+        if obj.sale_not_started:
+            state = _("Opens %(date)s") % {"date": timezone.localtime(obj.sale_start).strftime(fmt)}
+        elif obj.sale_ended:
+            state = _("Ended %(date)s") % {"date": timezone.localtime(obj.sale_end).strftime(fmt)}
+        else:
+            state = _("Open")
+        if obj.sale_end and not obj.sale_ended:
+            return format_html("{}<br><small>{}</small>", state,
+                               _("until %(date)s") % {"date": timezone.localtime(obj.sale_end).strftime(fmt)})
+        return state
+
+    @admin.display(description=_("Left online"))
     def available_display(self, obj):
         return format_number(obj.available)
+
+    @admin.display(description=_("Left to print"))
+    def physical_available_display(self, obj):
+        if not obj.pk:
+            return "—"
+        left = format_number(obj.physical_available)
+        if not obj.physical_available:
+            return left
+        url = reverse("admin:tickets_printbatch_add") + f"?ticket_type={obj.pk}"
+        return format_html('{} · <a href="{}" style="font-weight:bold">{}</a>', left, url, _("Print tickets"))
 
     @admin.display(description=_("Preview"))
     def seat_preview(self, obj):
@@ -112,9 +170,16 @@ class TicketTypeAdmin(ModelAdmin):
 
     @admin.display(description=_("Ticket preview"))
     def ticket_preview(self, obj):
+        return self._preview(obj, physical=False)
+
+    @admin.display(description=_("Printed ticket preview"))
+    def physical_ticket_preview(self, obj):
+        return self._preview(obj, physical=True)
+
+    def _preview(self, obj, physical):
         if not obj or not obj.pk:
             return _("Save first to see the preview.")
-        data = base64.b64encode(render_preview_png(obj, width=1200)).decode("ascii")
+        data = base64.b64encode(render_preview_png(obj, width=1200, physical=physical)).decode("ascii")
         return format_html(
             '<img src="data:image/png;base64,{}" alt="" style="width:100%;max-width:720px;height:auto;'
             'border:1px solid #E5E7EB;border-radius:8px">',
@@ -155,6 +220,39 @@ class TicketInline(TabularInline):
     @admin.display(description=_("Code"))
     def code_link(self, obj):
         return format_html('<a href="{}">{}</a>', reverse("admin:tickets_ticket_change", args=[obj.pk]), obj.code)
+
+
+class OrderChannelFilter(admin.SimpleListFilter):
+    """Online orders by default: the print batches (physical tickets) are not mixed in.
+    A search looks in both, so a printed ticket's code is found too."""
+
+    title = _("sales channel")
+    parameter_name = "channel"
+
+    def __init__(self, request, params, model, model_admin):
+        self.default = "all" if request.GET.get("q") else "online"
+        super().__init__(request, params, model, model_admin)
+
+    def lookups(self, request, model_admin):
+        return [("online", _("Online")), ("physical", _("Physical (print batches)")), ("all", _("All"))]
+
+    def value(self):
+        return super().value() or self.default
+
+    def queryset(self, request, queryset):
+        if self.value() == "online":
+            return queryset.filter(print_batch__isnull=True)
+        if self.value() == "physical":
+            return queryset.filter(print_batch__isnull=False)
+        return queryset
+
+    def choices(self, changelist):
+        for lookup, title in self.lookup_choices:
+            yield {
+                "selected": self.value() == lookup,
+                "query_string": changelist.get_query_string({self.parameter_name: lookup}),
+                "display": title,
+            }
 
 
 class OrderExportMixin:
@@ -218,7 +316,7 @@ class OrderExportMixin:
 @admin.register(Order)
 class OrderAdmin(OrderExportMixin, ModelAdmin):
     list_display = ("reference", "buyer_name", "buyer_email", "country_flag", "total", "status_badge", "gateway", "created_at")
-    list_filter = ("status", "country", "gateway", "is_complimentary", ("created_at", admin.DateFieldListFilter))
+    list_filter = (OrderChannelFilter, "status", "country", "gateway", "is_complimentary", ("created_at", admin.DateFieldListFilter))
     search_fields = ("reference", "buyer_email", "buyer_phone", "buyer_name", "gateway_transaction_id", "tickets__code")
     date_hierarchy = "created_at"
     list_select_related = ("gateway",)
@@ -419,19 +517,19 @@ class CheckInInline(TabularInline):
 
 @admin.register(Ticket)
 class TicketAdmin(ModelAdmin):
-    list_display = ("code", "serial_display", "holder_name", "ticket_type", "status_badge", "entries", "order_link", "download_count")
-    list_filter = ("status", "ticket_type", ("order__print_batch", admin.EmptyFieldListFilter), "order__country", "checkins__day")
+    list_display = ("code", "serial_display", "holder_name", "ticket_type", "channel_badge", "status_badge", "entries", "order_link", "download_count")
+    list_filter = ("channel", "status", "ticket_type", "order__country", "checkins__day")
     search_fields = ("code", "holder_name", "order__reference", "order__buyer_email", "order__buyer_phone")
     list_select_related = ("order", "ticket_type")
     inlines = [CheckInInline]
     actions = ["print_selected", "regenerate", "cancel_tickets", "reset_checkin"]
     actions_detail = ["regenerate_detail", "reset_checkin_detail"]
     readonly_fields = (
-        "code", "serial_display", "uuid", "order_link", "ticket_type", "status_badge", "qr_preview", "photo_preview",
+        "code", "serial_display", "uuid", "order_link", "ticket_type", "channel_badge", "status_badge", "qr_preview", "photo_preview",
         "checked_in_at", "checked_in_by", "email_sent_at", "download_count", "downloads", "created_at",
     )
     fieldsets = (
-        (None, {"fields": (("code", "serial_display"), "status_badge", "order_link", "ticket_type", "holder_name", "holder_photo", "photo_preview")}),
+        (None, {"fields": (("code", "serial_display"), ("channel_badge", "status_badge"), "order_link", "ticket_type", "holder_name", "holder_photo", "photo_preview")}),
         (_("QR code & files"), {"fields": ("qr_preview", "downloads", "uuid")}),
         (_("Entrance"), {"fields": ("checked_in_at", "checked_in_by", "email_sent_at", "download_count", "created_at")}),
     )
@@ -463,6 +561,10 @@ class TicketAdmin(ModelAdmin):
     @admin.display(description=_("Status"), ordering="status")
     def status_badge(self, obj):
         return badge(obj.status, obj.get_status_display())
+
+    @admin.display(description=_("Channel"), ordering="channel")
+    def channel_badge(self, obj):
+        return badge(obj.channel, obj.get_channel_display())
 
     @admin.display(description=_("Order"), ordering="order__reference")
     def order_link(self, obj):
@@ -518,6 +620,9 @@ class TicketAdmin(ModelAdmin):
         if len({t.ticket_type_id for t in tickets}) > 1:
             messages.error(request, _("Select tickets of one ticket type at a time (one design per PDF)."))
             return None
+        if len({t.channel for t in tickets}) > 1:
+            messages.error(request, _("Select online or printed tickets, not both (they don't look the same)."))
+            return None
         response = HttpResponse(render_print_pdf(tickets, PrintBatch.Paper.A4, 4), content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="tickets-{timezone.now():%Y%m%d-%H%M}.pdf"'
         return response
@@ -545,6 +650,15 @@ class TicketAdmin(ModelAdmin):
 # --------------------------------------------------------------------------
 # Print batches (bulk printed tickets)
 # --------------------------------------------------------------------------
+def physical_choice_label(ticket_type) -> str:
+    if not ticket_type.physical_capacity:
+        return _("%(name)s — no physical tickets planned") % {"name": ticket_type.name_en}
+    return _("%(name)s — %(left)s left to print (%(printed)s / %(total)s printed)") % {
+        "name": ticket_type.name_en, "left": format_number(ticket_type.physical_available),
+        "printed": format_number(ticket_type.printed), "total": format_number(ticket_type.physical_capacity),
+    }
+
+
 class PrintBatchForm(forms.ModelForm):
     class Meta:
         model = PrintBatch
@@ -553,18 +667,22 @@ class PrintBatchForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         event = Event.get_active()
-        if "ticket_type" in self.fields and event:
-            self.fields["ticket_type"].queryset = TicketType.objects.filter(event=event)
+        if "ticket_type" in self.fields:
+            field = self.fields["ticket_type"]
+            if event:
+                field.queryset = TicketType.objects.filter(event=event)
+            field.label_from_instance = physical_choice_label
+            field.help_text = _("Printed tickets come from the physical stock of the ticket type (Ticket types → "
+                                "Physical sale), never from the online stock.")
         if "quantity" in self.fields:
-            self.fields["quantity"].help_text = _("1 to %(max)s. Each ticket gets its own QR code, code and number.") % {
-                "max": PrintBatch.MAX_QUANTITY,
-            }
+            self.fields["quantity"].help_text = _("1 to %(max)s. Each ticket gets its own QR code, code and number "
+                                                  "(P-00001…).") % {"max": PrintBatch.MAX_QUANTITY}
 
     def clean(self):
         cleaned = super().clean()
         ticket_type, quantity = cleaned.get("ticket_type"), cleaned.get("quantity")
-        if not self.instance.pk and ticket_type and quantity and ticket_type.available < quantity:
-            self.add_error("quantity", _("Only %(count)s ticket(s) left in this category.") % {"count": ticket_type.available})
+        if not self.instance.pk and ticket_type and quantity and ticket_type.physical_available < quantity:
+            self.add_error("quantity", physical_stock_error(ticket_type))
         return cleaned
 
 
@@ -581,8 +699,9 @@ class PrintBatchAdmin(ModelAdmin):
     def get_fieldsets(self, request, obj=None):
         if obj is None:
             return ((None, {
-                "description": _("The system creates the tickets (QR code, code and number for each one, valid for every "
-                                 "day of the event), then the PDF to print: choose A4 and 4 or 5 tickets per page."),
+                "description": _("The system creates the physical tickets (QR code, code and number P-00001… for each "
+                                 "one, valid for every day of the event, marked PHYSICAL TICKET), then the PDF to "
+                                 "print: choose A4 and 4 or 5 tickets per page."),
                 "fields": ("ticket_type", "quantity", ("paper", "per_page"), "outlet", "note"),
             }),)
         return (

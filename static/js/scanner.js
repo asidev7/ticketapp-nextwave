@@ -108,7 +108,7 @@
     resultBox.querySelector("[data-result-status]").textContent = status;
     resultBox.querySelector("[data-result-name]").textContent = ticket.holder_name || (ticket.serial ? "No. " + ticket.serial : "");
     resultBox.querySelector("[data-result-detail]").textContent =
-      [ticket.category, ticket.zone].filter(Boolean).join(" · ");
+      [ticket.category, ticket.zone, ticket.channel].filter(Boolean).join(" · ");
     var extra = "";
     if (result === "already_used") {
       extra = (entry.days > 1 ? cfg.lToday + " — " : "") + cfg.lFirstScan + " " + (data.first_scan_at || "") + (data.first_scanned_by ? " — " + cfg.lBy + " " + data.first_scanned_by : "");

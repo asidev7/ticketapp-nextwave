@@ -2,9 +2,11 @@
 
 Stock rules
 -----------
-* `TicketType.reserved` — units held by pending orders (15 min).
-* `TicketType.sold`     — units in paid orders.
-* available = capacity - sold - reserved.
+Online and physical (printed) tickets have separate stocks per ticket type:
+* `TicketType.reserved` — online units held by pending orders (15 min).
+* `TicketType.sold`     — online units in paid orders (complimentary included).
+* `TicketType.printed`  — physical units issued by print batches.
+* available = capacity - sold - reserved · physical_available = physical_capacity - printed.
 All changes happen inside transactions with row locks (select_for_update)
 so two buyers can never take the last ticket at the same time.
 """
@@ -60,14 +62,15 @@ def generate_ticket_code() -> str:
     raise RuntimeError("Could not generate a unique ticket code")
 
 
-def next_serials(event, count: int) -> range:
-    """Reserve the next `count` serial numbers of an event.
+def next_serials(event, count: int, channel: str = Ticket.Channel.ONLINE) -> range:
+    """Reserve the next `count` serial numbers of an event for one sales channel
+    (online 00001, 00002… · printed P-00001, P-00002…).
 
     Must run inside a transaction: the event row is locked until commit, so
     two orders paid at the same moment never get the same numbers.
     """
     Event.objects.select_for_update().filter(pk=event.pk).first()
-    last = Ticket.objects.filter(order__event_id=event.pk).aggregate(n=Max("serial"))["n"] or 0
+    last = Ticket.objects.filter(order__event_id=event.pk, channel=channel).aggregate(n=Max("serial"))["n"] or 0
     return range(last + 1, last + 1 + count)
 
 
@@ -301,6 +304,14 @@ def issue_complimentary(
 # --------------------------------------------------------------------------
 # Printed tickets (bulk)
 # --------------------------------------------------------------------------
+def physical_stock_error(ticket_type) -> str:
+    if not ticket_type.physical_capacity:
+        return _("No tickets are planned for physical sale in this category: set the number in the ticket type.")
+    return _("Only %(count)s ticket(s) left to print in this category (%(printed)s of %(total)s printed).") % {
+        "count": ticket_type.physical_available, "printed": ticket_type.printed, "total": ticket_type.physical_capacity,
+    }
+
+
 def _unique_codes(count: int) -> list[str]:
     codes: set[str] = set()
     while len(codes) < count:
@@ -311,15 +322,16 @@ def _unique_codes(count: int) -> list[str]:
 
 def create_print_batch(*, ticket_type, quantity: int, paper: str = PrintBatch.Paper.A4, per_page: int = 4,
                        outlet=None, note: str = "", user=None) -> PrintBatch:
-    """Issue `quantity` bearer tickets for printing: each gets a signed QR code,
-    a code and the next serial numbers. They count as sold (stock) but bring no
+    """Issue `quantity` physical (bearer) tickets for printing: each gets a signed
+    QR code, a code and the next printed serial numbers (P-00001…). They come out
+    of the physical stock of the ticket type, never the online one, and bring no
     online revenue; nothing is e-mailed. The print PDF is built afterwards."""
     if not 1 <= quantity <= PrintBatch.MAX_QUANTITY:
         raise StockError(_("Choose between 1 and %(max)s tickets.") % {"max": PrintBatch.MAX_QUANTITY})
     with transaction.atomic():
         ticket_type = TicketType.objects.select_for_update().select_related("event").get(pk=ticket_type.pk)
-        if ticket_type.available < quantity:
-            raise StockError(_("Only %(count)s ticket(s) left in this category.") % {"count": ticket_type.available})
+        if ticket_type.physical_available < quantity:
+            raise StockError(physical_stock_error(ticket_type))
         event = ticket_type.event
         now = timezone.now()
         order = Order.objects.create(
@@ -335,15 +347,15 @@ def create_print_batch(*, ticket_type, quantity: int, paper: str = PrintBatch.Pa
             note=note,
         )
         OrderItem.objects.create(order=order, ticket_type=ticket_type, quantity=quantity, unit_price=0)
-        TicketType.objects.filter(pk=ticket_type.pk).update(sold=F("sold") + quantity)
+        TicketType.objects.filter(pk=ticket_type.pk).update(printed=F("printed") + quantity)
 
-        serials = next_serials(event, quantity)
+        serials = next_serials(event, quantity, Ticket.Channel.PHYSICAL)
         tickets = []
         for serial, code in zip(serials, _unique_codes(quantity)):
             ticket_uuid = uuid.uuid4()
             tickets.append(Ticket(
                 order=order, ticket_type=ticket_type, uuid=ticket_uuid, code=code, serial=serial,
-                qr_token=build_qr_payload(ticket_uuid),
+                channel=Ticket.Channel.PHYSICAL, qr_token=build_qr_payload(ticket_uuid),
             ))
         Ticket.objects.bulk_create(tickets)
 
@@ -369,9 +381,10 @@ def cancel_order(order_id: int, reason: str = "") -> bool:
             order.status = Order.Status.CANCELLED
             _release_stock(order)
         elif order.status == Order.Status.PAID:
+            counter = "printed" if PrintBatch.objects.filter(order=order).exists() else "sold"
             for item in order.items.all():
                 TicketType.objects.filter(pk=item.ticket_type_id).update(
-                    sold=Greatest(F("sold") - item.quantity, Value(0))
+                    **{counter: Greatest(F(counter) - item.quantity, Value(0))}
                 )
             order.tickets.exclude(status=Ticket.Status.USED).update(status=Ticket.Status.CANCELLED)
             order.status = Order.Status.CANCELLED
@@ -385,14 +398,16 @@ def cancel_order(order_id: int, reason: str = "") -> bool:
 
 
 def recount_stock(ticket_type: TicketType) -> TicketType:
-    """Rebuild sold/reserved counters from orders (safety net for the admin)."""
+    """Rebuild sold/reserved/printed counters from orders (safety net for the admin)."""
     items = OrderItem.objects.filter(ticket_type=ticket_type)
-    sold = items.filter(order__stock_state=Order.StockState.SOLD).aggregate(n=Sum("quantity"))["n"] or 0
+    issued = items.filter(order__stock_state=Order.StockState.SOLD)
+    sold = issued.filter(order__print_batch__isnull=True).aggregate(n=Sum("quantity"))["n"] or 0
+    printed = issued.filter(order__print_batch__isnull=False).aggregate(n=Sum("quantity"))["n"] or 0
     reserved = (
         items.filter(order__status=Order.Status.PENDING, order__stock_state=Order.StockState.RESERVED)
         .aggregate(n=Sum("quantity"))["n"]
         or 0
     )
-    TicketType.objects.filter(pk=ticket_type.pk).update(sold=sold, reserved=reserved)
+    TicketType.objects.filter(pk=ticket_type.pk).update(sold=sold, reserved=reserved, printed=printed)
     ticket_type.refresh_from_db()
     return ticket_type

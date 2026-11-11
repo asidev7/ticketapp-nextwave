@@ -151,6 +151,7 @@ def scan_ticket(raw_value: str, user, event, device_info: str = "", access: Scan
             "serial": ticket.serial_label,
             "holder_name": ticket.holder_name,
             "category": tt.tr("name"),
+            "channel": ticket.get_channel_display() if ticket.is_physical else "",
             "zone": tt.zone_label,
             "color": tt.color,
             "order": ticket.order.reference,

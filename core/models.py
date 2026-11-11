@@ -42,6 +42,16 @@ def youtube_id(url: str) -> str:
     return ""
 
 
+def split_phones(value: str) -> list[tuple[str, str]]:
+    """'07070257650, +229 01 90 77 68 88' → [(shown, tel: link)]."""
+    phones = []
+    for raw in (value or "").split(","):
+        shown = raw.strip()
+        if shown:
+            phones.append((shown, re.sub(r"[^\d+]", "", shown)))
+    return phones
+
+
 class TranslatedMixin:
     """`obj.tr("description")` → description_fr in French when filled, else description_en."""
 
@@ -250,12 +260,7 @@ class Event(TranslatedMixin, models.Model):
     @property
     def phone_list(self) -> list[tuple[str, str]]:
         """[(shown, tel: link)] from the comma-separated enquiry numbers."""
-        phones = []
-        for raw in (self.enquiry_phones or "").split(","):
-            shown = raw.strip()
-            if shown:
-                phones.append((shown, re.sub(r"[^\d+]", "", shown)))
-        return phones
+        return split_phones(self.enquiry_phones)
 
     def day_label(self, day) -> str:
         """'25 DEC' for an entry day."""
@@ -352,7 +357,10 @@ class PhysicalOutlet(models.Model):
     address = models.CharField(_("address"), max_length=255, blank=True)
     city = models.CharField(_("city"), max_length=100)
     country = models.CharField(_("country"), max_length=100, default="Benin")
-    phone = models.CharField(_("phone"), max_length=30, blank=True)
+    phone = models.CharField(
+        _("phone numbers"), max_length=200, blank=True,
+        help_text=_("Where buyers call this outlet. Several numbers: separate them with commas."),
+    )
     opening_hours = models.CharField(_("opening hours"), max_length=150, blank=True)
     map_link = models.URLField(_("map link"), max_length=500, blank=True)
     order = models.PositiveIntegerField(_("position"), default=0)
@@ -365,6 +373,10 @@ class PhysicalOutlet(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.city})" if self.name else self.city
+
+    @property
+    def phone_list(self) -> list[tuple[str, str]]:
+        return split_phones(self.phone)
 
 
 class FAQ(TranslatedMixin, models.Model):

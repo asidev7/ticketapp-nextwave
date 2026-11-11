@@ -122,6 +122,27 @@ ou l'exemple réel [`deploy/nginx.ticket.j5group.bar.conf`](deploy/nginx.ticket.
 
 Mise à jour : copiez le code (sans écraser `.env` ni le dossier des médias), puis `docker compose -p nextwave up -d --build`.
 
+### Remettre les ventes à zéro avant le lancement
+
+Pour effacer les commandes de test : la commande supprime les commandes, tickets, lots imprimés, scans et journaux
+des passerelles de l'événement actif, ainsi que leurs fichiers. Elle remet les compteurs à 0, donc les numéros
+repartent à 00001 et P-00001. L'événement, les types de tickets (prix, quotas, designs), les passerelles, les
+points de vente, les cartes staff et les comptes sont conservés.
+
+```bash
+# 1. sauvegarde
+docker compose -p nextwave exec -T db pg_dump -U nextwave nextwave > sauvegarde-$(date +%F).sql
+# 2. aperçu : rien n'est modifié
+docker compose -p nextwave exec web python manage.py reset_sales --sale-start "2026-11-20 10:00"
+# 3. exécution
+docker compose -p nextwave exec web python manage.py reset_sales --sale-start "2026-11-20 10:00" --yes
+```
+
+`--sale-start` est facultatif. Il fixe l'ouverture de la vente en ligne de tous les types actifs (heure du Bénin,
+ou `now` pour ouvrir tout de suite) et active la vente en ligne dans les réglages du site. Avant cette date,
+le site affiche « En vente dès le 20 novembre · 10:00 » et le paiement est refusé. Les dates se changent aussi
+dans *Types de tickets* (« Début des ventes » / « Fin des ventes »).
+
 ## Déploiement sans Docker (Gunicorn + Nginx)
 
 ```bash
@@ -140,6 +161,12 @@ Services systemd fournis dans `deploy/` : `nextwave-gunicorn.service`, `nextwave
 - **Réglages du site** : couleurs, contacts, ventes ouvertes/fermées, photo obligatoire, frais, textes légaux,
   et **QR code de la page d'achat** (PNG/SVG pour les affiches).
 - **Événement / Diaporama / Artistes / Types de tickets / Points de vente / FAQ** : tout le contenu EN/FR.
+- **Stock par type de ticket, en deux parts séparées** : *tickets en vente en ligne* (achats sur le site et invitations)
+  et *tickets en vente physique* (imprimés en lot pour les points de vente). L'une ne puise jamais dans l'autre :
+  « Plus que X places » et « Complet » sur le site ne comptent que le stock en ligne. La liste des types et le tableau de
+  bord affichent, pour chaque type, vendus / total en ligne et imprimés / total physique, avec ce qui reste.
+- **Points de vente** : ville, adresse, horaires, lien carte et **numéros de téléphone** (plusieurs, séparés par des
+  virgules), affichés sur le site avec les numéros de réservation de l'événement.
 - **Événement** : *nombre de jours* (2 = valable le 25 et le 26), ligne « présenté par », numéros de réservation,
   note sous les tickets (ex. bracelet RFID), vidéos YouTube (liste de liens, onglet de l'événement ou menu *Vidéos YouTube*).
   Une soirée qui dépasse minuit compte pour le jour où elle a commencé (jusqu'à 6 h).
@@ -149,8 +176,13 @@ Services systemd fournis dans `deploy/` : `nextwave-gunicorn.service`, `nextwave
   au style de l'affiche est dessiné (cases JOUR 1 / JOUR 2 sur le talon). Le PDF est au format billet.
 - **Impression en lot** : type de ticket + quantité (1 à 1 000) + format **A4 avec 4 ou 5 tickets par page** (ou taille
   ticket, 1 par page) → le système crée les tickets (QR, code, numéros qui se suivent, valables chaque jour) puis le PDF
-  avec traits de coupe. Ils comptent dans le stock, sans recette en ligne ni e-mail. Changer le format et enregistrer
-  régénère le PDF. Dans *Tickets*, l'action « Imprimer les tickets sélectionnés » fait un PDF A4 d'une sélection.
+  avec traits de coupe. Ils sortent du **stock physique** du type (jamais du stock en ligne), sans recette en ligne ni
+  e-mail. Changer le format et enregistrer régénère le PDF. Dans *Tickets*, l'action « Imprimer les tickets
+  sélectionnés » fait un PDF A4 d'une sélection (tickets en ligne ou imprimés, pas les deux).
+- **Tickets imprimés ≠ tickets en ligne** : numérotation à part (**P-00001**, P-00002… contre 00001 en ligne), mention
+  **TICKET PHYSIQUE** et talon or sur le design par défaut ; sur un design importé, carte du QR dorée avec la mention, et
+  un visuel propre aux tickets imprimés si vous en importez un (*design des tickets imprimés*, même mise en page).
+  Le scanner affiche « Physique (imprimé) ». Dans *Commandes*, les lots imprimés sont à part (filtre *canal de vente*).
 - **Accès scanner** : nom, identifiant (ex. `scan1`), code généré, date de fin facultative ; la fiche donne le lien de la
   page de scan, l'identifiant, le code et un bouton « Envoyer par WhatsApp ». Décocher *actif* ou « Nouveau code »
   déconnecte le téléphone au scan suivant. *Entrées* liste chaque entrée (jour, heure, scanner).

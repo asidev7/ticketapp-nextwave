@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
@@ -15,6 +16,10 @@ from core.utils import format_money
 from .qr import build_qr_payload
 
 
+def serial_label(serial: int, channel: str = "online") -> str:
+    return f"P-{serial:05d}" if channel == "physical" else f"{serial:05d}"
+
+
 class TicketType(TranslatedMixin, models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ticket_types", verbose_name=_("event"))
     name_en = models.CharField(_("name (EN)"), max_length=60)
@@ -24,9 +29,18 @@ class TicketType(TranslatedMixin, models.Model):
     description_fr = models.TextField(_("description (FR)"), blank=True)
     price_xof = models.PositiveIntegerField(_("price (XOF)"), default=0)
     price_ngn = models.PositiveIntegerField(_("price (NGN)"), default=0)
-    capacity = models.PositiveIntegerField(_("capacity"), default=100)
-    sold = models.PositiveIntegerField(_("sold"), default=0, help_text=_("Paid tickets (updated automatically)."))
+    capacity = models.PositiveIntegerField(
+        _("tickets for online sale"), default=100,
+        help_text=_("Sold on the website (complimentary tickets count here too)."),
+    )
+    sold = models.PositiveIntegerField(_("sold online"), default=0, help_text=_("Paid tickets (updated automatically)."))
     reserved = models.PositiveIntegerField(_("reserved"), default=0, help_text=_("Held by unpaid orders for 15 minutes."))
+    physical_capacity = models.PositiveIntegerField(
+        _("tickets for physical sale"), default=0,
+        help_text=_("Printed tickets sold at the outlets. Separate from the online tickets: "
+                    "print batches can never go beyond this number."),
+    )
+    printed = models.PositiveIntegerField(_("printed"), default=0, help_text=_("Physical tickets generated (updated automatically)."))
     is_active = models.BooleanField(_("active"), default=True)
     sale_start = models.DateTimeField(_("sale starts"), null=True, blank=True)
     sale_end = models.DateTimeField(_("sale ends"), null=True, blank=True)
@@ -59,6 +73,12 @@ class TicketType(TranslatedMixin, models.Model):
         choices=[("bottom_left", _("Bottom left")), ("top_left", _("Top left")), ("hidden", _("Hidden"))],
         help_text=_("Where the system writes the holder's photo and name on your design."),
     )
+    physical_design_image = models.ImageField(
+        _("design for printed tickets"), upload_to="tickets/designs/", blank=True,
+        help_text=_("Optional: another version of your artwork for the tickets sold at the outlets, with the same "
+                    "layout (the QR code goes at the same place). Empty = the design above. Printed tickets are "
+                    "always marked PHYSICAL TICKET and numbered P-00001, P-00002…"),
+    )
 
     class Meta:
         verbose_name = _("ticket type")
@@ -68,9 +88,24 @@ class TicketType(TranslatedMixin, models.Model):
     def __str__(self):
         return self.name_en
 
+    def clean(self):
+        errors = {}
+        if self.pk and self.capacity < self.sold:
+            errors["capacity"] = _("%(count)s tickets are already sold online.") % {"count": self.sold}
+        if self.pk and self.physical_capacity < self.printed:
+            errors["physical_capacity"] = _("%(count)s tickets are already printed.") % {"count": self.printed}
+        if errors:
+            raise ValidationError(errors)
+
     @property
     def available(self) -> int:
+        """Left for online sale."""
         return max(self.capacity - self.sold - self.reserved, 0)
+
+    @property
+    def physical_available(self) -> int:
+        """Left to print for the outlets."""
+        return max(self.physical_capacity - self.printed, 0)
 
     @property
     def is_low_stock(self) -> bool:
@@ -93,6 +128,15 @@ class TicketType(TranslatedMixin, models.Model):
         if self.sale_end and now > self.sale_end:
             return False
         return True
+
+    @property
+    def sale_not_started(self) -> bool:
+        """The sale start date is set and still to come."""
+        return bool(self.sale_start and timezone.now() < self.sale_start)
+
+    @property
+    def sale_ended(self) -> bool:
+        return bool(self.sale_end and timezone.now() > self.sale_end)
 
     def get_checkout_url(self):
         return reverse("tickets:checkout", args=[self.slug])
@@ -218,13 +262,20 @@ class Ticket(models.Model):
         USED = "used", _("Used")
         CANCELLED = "cancelled", _("Cancelled")
 
+    class Channel(models.TextChoices):
+        ONLINE = "online", _("Online")
+        PHYSICAL = "physical", _("Physical (printed)")
+
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="tickets", verbose_name=_("order"))
     ticket_type = models.ForeignKey(TicketType, on_delete=models.PROTECT, related_name="tickets", verbose_name=_("ticket type"))
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     code = models.CharField(_("code"), max_length=20, unique=True, editable=False)
     serial = models.PositiveIntegerField(
         _("serial number"), null=True, blank=True, editable=False, db_index=True,
-        help_text=_("Sequential number within the event, printed on the ticket."),
+        help_text=_("Sequential number within the event and the sales channel, printed on the ticket."),
+    )
+    channel = models.CharField(
+        _("sales channel"), max_length=10, choices=Channel.choices, default=Channel.ONLINE, editable=False, db_index=True,
     )
     holder_name = models.CharField(_("holder name"), max_length=120, blank=True)
     holder_photo = models.ImageField(_("holder photo"), storage=private_storage, upload_to="holders/", blank=True)
@@ -261,9 +312,13 @@ class Ticket(models.Model):
         return "".join(p[0] for p in parts[:2]).upper() or "NW"
 
     @property
+    def is_physical(self) -> bool:
+        return self.channel == self.Channel.PHYSICAL
+
+    @property
     def serial_label(self) -> str:
-        """'00042' — always five digits so printed numbers line up."""
-        return f"{self.serial:05d}" if self.serial else ""
+        """'00042' online, 'P-00042' printed — always five digits so printed numbers line up."""
+        return serial_label(self.serial, self.channel) if self.serial else ""
 
 
 class PrintBatch(models.Model):
@@ -320,4 +375,4 @@ class PrintBatch(models.Model):
     def serial_range(self) -> str:
         if not self.first_serial:
             return "—"
-        return f"{self.first_serial:05d} → {self.last_serial:05d}"
+        return f"{serial_label(self.first_serial, 'physical')} → {serial_label(self.last_serial, 'physical')}"

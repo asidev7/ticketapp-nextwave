@@ -1,6 +1,6 @@
 {% load static %}/* NextWave scanner service worker — caches the app shell only.
    Scan requests (/api/…) always go to the network. */
-const CACHE = "nwp-scanner-v2";
+const CACHE = "nwp-scanner-v3";
 const SHELL = [
   "{% static 'css/scanner.css' %}",
   "{% static 'js/scanner.js' %}",

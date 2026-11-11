@@ -22,7 +22,7 @@
 
   {% if not on_sale %}
     <p class="alert alert-error" role="alert">
-      {% if ticket_type.is_sold_out %}{% translate "This ticket is sold out." %}{% else %}{% translate "This ticket is not on sale right now." %}{% endif %}
+      {% if ticket_type.is_sold_out %}{% translate "This ticket is sold out." %}{% elif ticket_type.sale_not_started %}{% blocktranslate with date=ticket_type.sale_start|date:"j F Y · H:i" %}Sales for this ticket open on {{ date }}.{% endblocktranslate %}{% elif ticket_type.sale_ended %}{% translate "Sales for this ticket have ended." %}{% else %}{% translate "This ticket is not on sale right now." %}{% endif %}
     </p>
     <p><a class="btn btn-primary" href="{% url 'core:home' %}#tickets">{% translate "See other tickets" %}</a></p>
   {% else %}

@@ -17,7 +17,7 @@ def dashboard_callback(request, context):
     from tickets.models import Order, OrderItem, Ticket
 
     event = Event.get_active()
-    paid = Order.objects.filter(status=Order.Status.PAID, is_complimentary=False)
+    paid = Order.objects.filter(status=Order.Status.PAID, is_complimentary=False, print_batch__isnull=True)
     if event:
         paid = paid.filter(event=event)
 
@@ -26,7 +26,7 @@ def dashboard_callback(request, context):
     if event:
         issued = issued.filter(order__event=event)
 
-    categories, total_capacity = [], 0
+    categories, online_capacity, physical_capacity = [], 0, 0
     if event:
         for tt in event.ticket_types.all():
             items = OrderItem.objects.filter(ticket_type=tt, order__status=Order.Status.PAID)
@@ -34,8 +34,10 @@ def dashboard_callback(request, context):
                 row["order__currency"]: row["amount"] or 0
                 for row in items.values("order__currency").annotate(amount=Sum(F("quantity") * F("unit_price")))
             }
-            total_capacity += tt.capacity
+            online_capacity += tt.capacity
+            physical_capacity += tt.physical_capacity
             percent = round(100 * tt.sold / tt.capacity) if tt.capacity else 0
+            physical_percent = round(100 * tt.printed / tt.physical_capacity) if tt.physical_capacity else 0
             categories.append(
                 {
                     "name": tt.name_en,
@@ -43,7 +45,13 @@ def dashboard_callback(request, context):
                     "sold": format_number(tt.sold),
                     "reserved": tt.reserved,
                     "capacity": format_number(tt.capacity),
+                    "available": format_number(tt.available),
                     "percent": min(percent, 100),
+                    "printed": format_number(tt.printed),
+                    "physical_capacity": format_number(tt.physical_capacity),
+                    "physical_available": format_number(tt.physical_available),
+                    "physical_percent": min(physical_percent, 100),
+                    "has_physical": bool(tt.physical_capacity or tt.printed),
                     "xof": format_money(by_currency.get("XOF", 0), "XOF"),
                     "ngn": format_money(by_currency.get("NGN", 0), "NGN"),
                 }
@@ -54,7 +62,7 @@ def dashboard_callback(request, context):
     start = today - timedelta(days=6)
     per_day = {
         row["day"]: row["tickets"]
-        for row in issued.filter(order__paid_at__date__gte=start)
+        for row in issued.filter(channel=Ticket.Channel.ONLINE, order__paid_at__date__gte=start)
         .annotate(day=TruncDate("order__paid_at", tzinfo=timezone.get_current_timezone()))
         .values("day")
         .annotate(tickets=Count("id"))
@@ -85,11 +93,12 @@ def dashboard_callback(request, context):
                 "revenue_ngn": format_money(revenue.get("NGN", {}).get("total") or 0, "NGN"),
                 "orders_xof": revenue.get("XOF", {}).get("orders", 0),
                 "orders_ngn": revenue.get("NGN", {}).get("orders", 0),
-                "tickets_issued": format_number(issued.count()),
-                "capacity": format_number(total_capacity),
+                "online_issued": format_number(issued.filter(channel=Ticket.Channel.ONLINE).count()),
+                "online_capacity": format_number(online_capacity),
+                "printed": format_number(issued.filter(channel=Ticket.Channel.PHYSICAL).count()),
+                "physical_capacity": format_number(physical_capacity),
                 "pending": Order.objects.filter(status=Order.Status.PENDING).count(),
                 "complimentary": issued.filter(order__is_complimentary=True).count(),
-                "printed": issued.filter(order__print_batch__isnull=False).count(),
                 "per_day": counts["per_day"],
                 "categories": categories,
                 "chart": chart,

@@ -107,6 +107,8 @@
         <article class="ticket-card{% if tt.is_sold_out %} is-soldout{% endif %}" style="--tt-color: {{ tt.color }}">
           <p class="ticket-card__status">
             {% if tt.is_sold_out %}<span class="pill pill-dark">{% translate "Sold out" %}</span>
+            {% elif tt.sale_not_started %}<span class="pill pill-gold">{% translate "Coming soon" %}</span>
+            {% elif tt.sale_ended %}<span class="pill pill-dark">{% translate "Sale ended" %}</span>
             {% elif site.show_remaining_stock and tt.is_low_stock %}<span class="pill pill-gold">{% blocktranslate with left=tt.available|num count counter=tt.available %}Only {{ left }} left{% plural %}Only {{ left }} left{% endblocktranslate %}</span>
             {% else %}<span class="pill pill-green">{% translate "Available" %}</span>{% endif %}
             {% if event.is_multi_day %}<span class="pill pill-outline">{% blocktranslate with n=event.days %}{{ n }} days{% endblocktranslate %}</span>{% endif %}
@@ -124,7 +126,10 @@
               <a class="btn btn-primary btn-block" href="{{ tt.get_checkout_url }}?country={% if currency == 'NGN' %}NG{% else %}BJ{% endif %}" data-select
                  data-ngn="{{ tt.price_ngn }}" data-xof="{{ tt.price_xof }}">{% translate "Buy" %}{% icon "arrow-right" 18 %}</a>
             {% else %}
-              <span class="btn btn-disabled btn-block" aria-disabled="true">{% if tt.is_sold_out %}{% translate "Sold out" %}{% else %}{% translate "Not on sale" %}{% endif %}</span>
+              <span class="btn btn-disabled btn-block" aria-disabled="true">{% if tt.is_sold_out %}{% translate "Sold out" %}{% elif tt.sale_not_started %}{% blocktranslate with date=tt.sale_start|date:"j F · H:i" %}On sale from {{ date }}{% endblocktranslate %}{% elif tt.sale_ended %}{% translate "Sale ended" %}{% else %}{% translate "Not on sale" %}{% endif %}</span>
+            {% endif %}
+            {% if tt.physical_capacity and outlets %}
+              <a class="link-btn" href="#outlets">{% icon "map-pin" 16 %}{% translate "Also sold in person" %}</a>
             {% endif %}
             {% if tt.seat_image %}
               <button type="button" class="link-btn" data-lightbox="{{ tt.seat_image.url }}" data-caption="{{ tt|tr:'name' }}{% if tt.zone_label %} — {{ tt.zone_label }}{% endif %}">{% icon "map" 16 %}{% translate "View my spot" %}</button>
@@ -269,8 +274,13 @@
   </div>
 
   {% if outlets %}
-    <div class="container">
+    <div class="container" id="outlets">
       <h3 class="subsection-title">{% translate "Buy in person" %}</h3>
+      {% if event.phone_list %}
+        <p class="enquiries"><span>{% translate "Call to buy or reserve" %}</span>
+          {% for shown, number in event.phone_list %}<a href="tel:{{ number }}">{{ shown }}</a>{% endfor %}
+        </p>
+      {% endif %}
       <ul class="outlet-grid">
         {% for outlet in outlets %}
           <li class="outlet">
@@ -281,7 +291,7 @@
               {% if outlet.name or outlet.address %}<p class="outlet__place">{{ outlet.name }}{% if outlet.name and outlet.address %} · {% endif %}{{ outlet.address }}</p>{% endif %}
               {% if outlet.opening_hours %}<p class="outlet__hours">{% icon "clock" 16 %}{{ outlet.opening_hours }}</p>{% endif %}
               <p class="outlet__links">
-                {% if outlet.phone %}<a href="tel:{{ outlet.phone|cut:' ' }}">{% icon "phone" 16 %}{{ outlet.phone }}</a>{% endif %}
+                {% for shown, number in outlet.phone_list %}<a href="tel:{{ number }}">{% icon "phone" 16 %}{{ shown }}</a>{% endfor %}
                 {% if outlet.map_link %}<a href="{{ outlet.map_link }}" target="_blank" rel="noopener">{% icon "navigation" 16 %}{% translate "Map" %}</a>{% endif %}
               </p>
             </div>
